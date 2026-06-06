@@ -111,12 +111,17 @@ def caddy_block(url: str, mode: str) -> str:
 
     if mode == "prod":
         body = f"""{primary} {{
-\troot * {ROOT / 'out'}
-\tencode gzip zstd
-\t@backend path /socket.io/* /createLobby /joinLobby /messages/* /gameMessages/* /resolveMigration/* /migration/*
-\treverse_proxy @backend {target}
-\ttry_files {{path}} {{path}}/ /index.html
-\tfile_server
+	encode gzip zstd
+	handle_path /_next/static/* {{
+		root * {ROOT / '.next' / 'static'}
+		file_server
+	}}
+	@public_assets path /Background.svg /CreditLogo.png /Github.png /Linkedin.png /mayor.jpeg /seer.jpeg /villager.jpeg /wolf.jpeg /favicon.ico /robots.txt
+	handle @public_assets {{
+		root * {ROOT / 'public'}
+		file_server
+	}}
+	reverse_proxy {target}
 }}"""
     else:
         body = f"""{primary} {{
