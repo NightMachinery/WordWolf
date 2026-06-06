@@ -1,19 +1,3 @@
-/* eslint-disable padded-blocks */
-/* eslint-disable no-trailing-spaces */
-/* eslint-disable no-multiple-empty-lines */
-/*
-RFP2202-Blue-Ocean-Avengers BOA
-Amy Kwak, Andy Chan, Anny Wang, Bogdan Gordin, Casey Eads, Danny Wong, Eunice Kim
-5/8/22
-Blue Ocean
-this is the mayor modal that shows the oldest question asked and the buttons to answer that question
-could be hidden if no questions are in the queue?
-i needed to too id twice to both the button and the react icon cause during the clicking
-the event reader would read either the id from button or the id from react icon
-needs the lobby object's questions array
-also to visually function some questions are already needed inside of the lobby.lobby.questions
-*/
-
 import { useContext } from 'react';
 import styled from 'styled-components';
 import { Button, HStack, VStack } from '@chakra-ui/react';
@@ -31,14 +15,14 @@ import { socket } from '../pages/api/service/socket';
 import { StoreContext } from '../pages/api/contextStore';
 
 
-function MayorQModal({ lobby }) {
+function MayorQModal({ lobby, loginData }) {
   const {
     soClose, setSoClose, wayOff, setWayOff, correct, setCorrect,
   } = useContext(StoreContext);
 
   const clickedOnButton = (e) => {
     if (e.target.id) {
-      socket.emit('AnsweredQuestion', { answer: e.target.id, question: lobby.questions[0], lobbyName: lobby?.name });
+      socket.emit('AnsweredQuestion', { answer: e.target.id, question: lobby.questions[0], lobbyName: lobby?.name, requesterAuthId: loginData.authId });
     } else { // in case undefined gets passed to the server
       return;
     }
@@ -53,7 +37,7 @@ function MayorQModal({ lobby }) {
   };
 
   const clickedOnButtonDiscard = (e) => {
-    socket.emit('AnsweredQuestion', { answer: e.target.id, question: lobby.questions[0], lobbyName: lobby?.name });
+    socket.emit('AnsweredQuestion', { answer: e.target.id, question: lobby.questions[0], lobbyName: lobby?.name, requesterAuthId: loginData.authId });
     console.log(e.target.id);
   };
 

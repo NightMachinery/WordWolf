@@ -96,7 +96,7 @@ function Game({
             />
           </Box>
           <Box style={is16 ? { position: 'absolute', top: '-1.2vh', right: '6vw' } : { position: 'absolute', top: '-1.2vh', right: '2vw' }}>
-            <MayorDisplay mayor={lobby?.mayor.name} lobby={lobby} />
+            <MayorDisplay mayor={lobby?.mayor.displayName || lobby?.mayor.name} lobby={lobby} />
           </Box>
         </HStack>
         <HStack
@@ -118,7 +118,7 @@ function Game({
             </Box>
             <GameChat
               players={lobby?.players}
-              username={loginData?.name}
+              username={loginData?.authId}
               lobby={loginData?.lobby}
             />
           </Box>
@@ -130,8 +130,8 @@ function Game({
             transform="scale(0.80)"
             top="18px"
           >
-            <UserRole roles={lobby?.players[loginData.name].role} />
-            {lobby?.mayor?.name === loginData.name
+            <UserRole roles={lobby?.players[loginData.authId]?.role} />
+            {lobby?.mayor?.authId === loginData.authId
               ? (
                 <Box
                   w="220px"
@@ -155,10 +155,10 @@ function Game({
         </HStack>
       </VStack>
       {
-        (lobby?.mayor?.name === loginData.name
+        (lobby?.mayor?.authId === loginData.authId
           && lobby?.questions.length > 0 && lobby?.tokens > 0) ? (
             <Box pos="relative" right="220" top="435" transform="scale(0.83)" h="fit-content">
-              <MayorQModal lobby={lobby} />
+              <MayorQModal lobby={lobby} loginData={loginData} />
             </Box>
           ) : null
       }

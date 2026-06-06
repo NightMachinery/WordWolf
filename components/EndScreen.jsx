@@ -20,11 +20,11 @@ function EndScreen({ lobby, resetGame, loginData }) {
   // if winners are wolves return true
   // if winners are villagers return false
   const checkWinner = () => {
-    if (lobby?.werewolfVote?.length > 0) {
+    if (lobby?.werewolfVotes?.length > 0) {
       // check who the werewoles voted on
       // check vs who lobby.seer really was
-      lobby?.werewolfVote.forEach((vote) => {
-        if (vote.name === lobby?.seer.name) {
+      lobby?.werewolfVotes.forEach((vote) => {
+        if (vote.name === lobby?.seer.displayName || lobby?.seer.name) {
           // wolves win
           return true;
         }
@@ -104,7 +104,7 @@ function EndScreen({ lobby, resetGame, loginData }) {
               &nbsp;
               {lobby?.werewolf.map((wolf) => (
                 <div>
-                  {wolf.name}
+                  {wolf.displayName || wolf.name}
                   {' '}
                 </div>
               ))}
@@ -121,10 +121,10 @@ function EndScreen({ lobby, resetGame, loginData }) {
             >
               Seer:
               &nbsp;
-              {lobby?.seer.name}
+              {lobby?.seer.displayName || lobby?.seer.name}
             </Box>
           </Box>
-          {lobby?.host === loginData?.name ? <Button name="resetGame" onClick={(e) => backToLobby(e)}>Reset Game</Button> : null}
+          {lobby?.players?.[loginData?.authId]?.canModerate ? <Button name="resetGame" onClick={(e) => backToLobby(e)}>Reset Game</Button> : null}
         </ModalBody>
         <ModalFooter />
       </ModalContent>

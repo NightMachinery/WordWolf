@@ -1,33 +1,112 @@
+const crypto = require('crypto');
 const wordList = require('../../wordList.json');
 
 const lobbies = new Map();
+const tempModTimers = new Map();
+const TEMP_MOD_DELAY_MS = Number(process.env.TEMP_MOD_DELAY_MS || 5 * 60 * 1000);
 
-/*
-  #lobby
-    1. host starts the game
-  #mayorPick
-    1. every player that has is not a spectator gets a random role
-    2. a random mayor is set
-    3. the mayor gets two random words to choose from
-    4. that word is sent to the werewolves and the seer
-  #questionRound
-    1. the questions round begins
-    2. people can asks questions in the chat and the mayor will
-    respond with tokens to each player accordingly
-  #endGame
-    3. if time runs out | if tokens run out | if word is guessed THEN game is over
-  #outOfTokens / #outOfTime
-    4a. if word is not guessed, everyone votes on who the werewolf is
-  #wordGuessed
-    4b. if word is guessed, werewolf is revealed,
-    and they guess who the seer is with 15s on the timer
-    5. cards are revealed
-*/
+const seatColors = {
+  seat1: '#E6474E',
+  seat2: '#F18E35',
+  seat3: '#F5D74C',
+  seat4: '#54B877',
+  seat5: '#55BFDB',
+  seat6: '#164186',
+  seat7: '#582C71',
+  seat8: '#D564D8',
+  seat9: '#71362E',
+  seat10: '#333333',
+};
+
+const activePlayer = (player) => player && !player.spectator && !player.observer;
+const onlineRealMod = (lobby) => Object.values(lobby.players).some(
+  (player) => player.online && (player.authId === lobby.ownerId || lobby.mods[player.authId]),
+);
+
+const refreshEffectiveMods = (lobby) => {
+  const realModOnline = onlineRealMod(lobby);
+  Object.values(lobby.players).forEach((player) => {
+    player.isOwner = player.authId === lobby.ownerId;
+    player.isMod = Boolean(lobby.mods[player.authId]);
+    player.isTempMod = Boolean(lobby.tempMods[player.authId]);
+    player.tempModActive = !realModOnline && lobby.activeTempModId === player.authId;
+    player.canModerate = player.isOwner || player.isMod || player.tempModActive;
+  });
+};
+
+const getLobby = (lobbyName) => {
+  const lobby = lobbies.get(lobbyName);
+  if (!lobby) {
+    return null;
+  }
+  refreshEffectiveMods(lobby);
+  return lobby;
+};
+
+const chooseTempMod = (lobbyName) => {
+  const lobby = lobbies.get(lobbyName);
+  if (!lobby || onlineRealMod(lobby)) {
+    if (lobby) {
+      lobby.activeTempModId = null;
+      refreshEffectiveMods(lobby);
+    }
+    return null;
+  }
+  const onlinePlayers = Object.values(lobby.players).filter((player) => player.online);
+  if (onlinePlayers.length === 0) {
+    return null;
+  }
+  const previousTemp = onlinePlayers.find((player) => lobby.tempMods[player.authId]);
+  const chosen = previousTemp || onlinePlayers[Math.floor(Math.random() * onlinePlayers.length)];
+  lobby.tempMods[chosen.authId] = true;
+  lobby.activeTempModId = chosen.authId;
+  refreshEffectiveMods(lobby);
+  return chosen;
+};
+
+const touchModeration = (lobbyName) => {
+  const lobby = lobbies.get(lobbyName);
+  if (!lobby) {
+    return null;
+  }
+  if (tempModTimers.has(lobbyName)) {
+    clearTimeout(tempModTimers.get(lobbyName));
+    tempModTimers.delete(lobbyName);
+  }
+  if (onlineRealMod(lobby)) {
+    lobby.activeTempModId = null;
+    refreshEffectiveMods(lobby);
+    return lobby;
+  }
+  tempModTimers.set(lobbyName, setTimeout(() => {
+    tempModTimers.delete(lobbyName);
+    chooseTempMod(lobbyName);
+  }, TEMP_MOD_DELAY_MS));
+  refreshEffectiveMods(lobby);
+  return lobby;
+};
+
+const canModerate = (lobby, authId) => {
+  if (!lobby || !authId) {
+    return false;
+  }
+  refreshEffectiveMods(lobby);
+  return Boolean(lobby.players[authId]?.canModerate);
+};
 
 class Lobby {
-  constructor(host, name) {
+  constructor(ownerId, name) {
     this.name = name;
-    this.host = host;
+    this.ownerId = ownerId;
+    this.host = ownerId; // legacy alias for immutable owner
+    this.mods = {};
+    this.tempMods = {};
+    this.modPromoters = {};
+    this.activeTempModId = null;
+    this.nameAssignments = {};
+    this.usedNameNumbers = {};
+    this.migrationByAuth = {};
+    this.authByMigration = {};
     this.mayor = null;
     this.werewolf = [];
     this.seer = null;
@@ -37,8 +116,8 @@ class Lobby {
     };
     this.timer = 1;
     this.pickCount = 2;
-    this.gameState = 'lobby'; // four possible states [lobby, mayorPick, questionRound, endGame]
-    this.players = {}; // an object that contains players in the game
+    this.gameState = 'lobby';
+    this.players = {};
     this.seats = {
       seat1: null,
       seat2: null,
@@ -50,59 +129,58 @@ class Lobby {
       seat8: null,
       seat9: null,
       seat10: null,
-    }; // seats for the game
-    this.words = []; // two randomly chosen words
-    this.chosenWord = ''; // word chosen by the mayor for this round
-    this.messages = []; // all messages store for chat?
-    this.questions = []; // questions queue
-    this.answeredQuestions = []; // all answered questions with their respective answers
-    this.soClose = null; // question object for given token
-    this.wayOff = null; // question object for given token
-    this.correct = null; // question object for given token
-    this.tokens = 36; // if this runs out the game ends, yes no tokens
-    this.maybeTokens = 12; // 12 maybe tokens, cannot give if have no more left, button disppears?
-    this.villagerVotes = []; // player objects will be stored in here as votes
-    this.werewolfVotes = []; // player objects will be stored in here as votes
-    this.soClose = null; // question object for given token
-    this.wayOff = null; // question object for given token
-    this.correct = null; // question object for given token
+    };
+    this.words = [];
+    this.chosenWord = '';
+    this.messages = [];
+    this.questions = [];
+    this.answeredQuestions = [];
+    this.soClose = null;
+    this.wayOff = null;
+    this.correct = null;
+    this.tokens = 36;
+    this.maybeTokens = 12;
+    this.villagerVotes = [];
+    this.werewolfVotes = [];
   }
 }
 
-const updatePickCount = (pickCount, lobby) => {
-  const currLobby = lobbies.get(lobby);
+const requireMod = (lobbyName, requesterAuthId) => {
+  const lobby = getLobby(lobbyName);
+  if (!canModerate(lobby, requesterAuthId)) {
+    return null;
+  }
+  return lobby;
+};
+
+const updatePickCount = (pickCount, lobby, requesterAuthId) => {
+  const currLobby = requireMod(lobby, requesterAuthId);
   if (!currLobby) {
     return null;
   }
   currLobby.pickCount = Number(pickCount);
-  lobbies.set(lobby, currLobby);
   return currLobby;
 };
 
-const updateTimer = (settings, lobby) => {
-  // get specific lobby
-  const currLobby = lobbies.get(lobby);
+const updateTimer = (settings, lobby, requesterAuthId) => {
+  const currLobby = requireMod(lobby, requesterAuthId);
   if (!currLobby) {
     return null;
   }
-  // update settings to param
   currLobby.settings = settings;
-  // update lobbies map
-  lobbies.set(lobby, currLobby);
   return currLobby;
 };
 
-const updateSaveTimer = (timer, lobby) => {
-  const currLobby = lobbies.get(lobby);
+const updateSaveTimer = (timer, lobby, requesterAuthId) => {
+  const currLobby = requireMod(lobby, requesterAuthId);
   if (!currLobby) {
     return null;
   }
   currLobby.timer = timer;
-  lobbies.set(lobby, currLobby);
   return currLobby;
 };
 
-const addLobby = (host, name) => {
+const addLobby = (ownerId, name) => {
   const existingLobby = lobbies.get(name);
   if (existingLobby) {
     return { error: 'Lobby name already in use' };
@@ -110,77 +188,120 @@ const addLobby = (host, name) => {
   if (!name) {
     return { error: 'Please provide a lobby name' };
   }
+  if (!ownerId) {
+    return { error: 'Missing user identity' };
+  }
 
-  const lobby = new Lobby(host, name);
+  const lobby = new Lobby(ownerId, name);
   lobbies.set(name, lobby);
   return lobby;
 };
 
-const getLobby = (lobbyName) => {
-  const lobby = lobbies.get(lobbyName);
-  if (!lobby) {
-    return null;
-  }
-  return lobby;
-};
-
 const deleteLobby = (name) => {
+  if (tempModTimers.has(name)) {
+    clearTimeout(tempModTimers.get(name));
+    tempModTimers.delete(name);
+  }
   lobbies.delete(name);
 };
 
-const toggleJoin = (name, lobby, seat, color) => {
+const toggleJoin = (authId, lobby, seat, color) => {
   const currentLobby = lobbies.get(lobby);
-  if (!currentLobby) {
+  if (!currentLobby || !currentLobby.players[authId]) {
     return null;
   }
-  currentLobby.players[name].spectator = false;
-  currentLobby.players[name].seat = seat;
-  currentLobby.players[name].color = color;
-  if (!currentLobby.seats[seat]) {
-    currentLobby.seats[seat] = currentLobby.players[name];
+  const player = currentLobby.players[authId];
+  if (player.observer) {
+    return null;
   }
-  lobbies.set(currentLobby.name, currentLobby);
+  if (currentLobby.seats[seat] && currentLobby.seats[seat].authId !== authId) {
+    return null;
+  }
+  player.spectator = false;
+  player.seat = seat;
+  player.color = color || seatColors[seat];
+  currentLobby.seats[seat] = player;
+  return currentLobby;
+};
+
+const swapSeats = (authId, lobby, seat, color) => {
+  const currentLobby = lobbies.get(lobby);
+  if (!currentLobby || !currentLobby.players[authId]) {
+    return null;
+  }
+  const player = currentLobby.players[authId];
+  if (player.observer || (currentLobby.seats[seat] && currentLobby.seats[seat].authId !== authId)) {
+    return null;
+  }
+  const prevSeat = player.seat;
+  player.color = color || seatColors[seat];
+  player.seat = seat;
+  if (prevSeat) {
+    currentLobby.seats[prevSeat] = null;
+  }
+  currentLobby.seats[seat] = player;
+  return currentLobby;
+};
+
+const toggleSpectate = (authId, lobby) => {
+  const currentLobby = lobbies.get(lobby);
+  if (!currentLobby || !currentLobby.players[authId]) {
+    return null;
+  }
+  const player = currentLobby.players[authId];
+  const prevSeat = player.seat;
+  player.spectator = true;
+  player.observer = false;
+  player.seat = null;
+  if (prevSeat) {
+    currentLobby.seats[prevSeat] = null;
+  }
+  player.color = null;
+  return currentLobby;
+};
+
+const setObserver = (lobbyName, targetAuthId, observer, requesterAuthId) => {
+  const lobby = requireMod(lobbyName, requesterAuthId);
+  if (!lobby || !lobby.players[targetAuthId]) {
+    return null;
+  }
+  const player = lobby.players[targetAuthId];
+  if (!player.seat) {
+    return null;
+  }
+  player.spectator = false;
+  player.observer = Boolean(observer);
+  lobby.seats[player.seat] = player;
   return lobby;
 };
 
-const swapSeats = (name, lobby, seat, color) => {
-  const currentLobby = lobbies.get(lobby);
-  if (!currentLobby) {
+const rejoinFromObserver = (lobbyName, authId, requesterAuthId) => {
+  const lobby = getLobby(lobbyName);
+  if (!lobby || !lobby.players[authId]) {
     return null;
   }
-  const prevSeat = currentLobby.players[name].seat;
-  currentLobby.players[name].color = color;
-  currentLobby.players[name].seat = seat;
-  currentLobby.seats[prevSeat] = null;
-  currentLobby.seats[seat] = currentLobby.players[name];
-  lobbies.set(currentLobby.name, currentLobby);
+  if (authId !== requesterAuthId && !canModerate(lobby, requesterAuthId)) {
+    return null;
+  }
+  const player = lobby.players[authId];
+  if (!player.seat) {
+    return null;
+  }
+  player.observer = false;
+  player.spectator = false;
+  lobby.seats[player.seat] = player;
   return lobby;
 };
 
-const toggleSpectate = (name, lobby) => {
-  const currentLobby = lobbies.get(lobby);
-  if (!currentLobby) {
-    return null;
-  }
-  const prevSeat = currentLobby.players[name].seat;
-  currentLobby.players[name].spectator = true;
-  currentLobby.players[name].seat = null;
-  currentLobby.seats[prevSeat] = null;
-  currentLobby.players[name].color = null;
-  lobbies.set(currentLobby.name, currentLobby);
-  return lobby;
-};
-
-const startGame = (lobbyName) => {
-  const lobby = lobbies.get(lobbyName);
+const startGame = (lobbyName, requesterAuthId) => {
+  const lobby = requireMod(lobbyName, requesterAuthId);
   if (!lobby) {
     return null;
   }
   const joinedCount = Object.keys(lobby.players)
-    .reduce((prev, player) => (!lobby.players[player].spectator ? prev + 1 : prev), 0);
-  const roles = ['villager', 'villager', 'seer', 'werewolf']; // base roles
+    .reduce((prev, player) => (activePlayer(lobby.players[player]) ? prev + 1 : prev), 0);
+  const roles = ['villager', 'villager', 'seer', 'werewolf'];
 
-  // adds villagers to the roles array dynamically
   const addVillagers = (count) => {
     while (count > 0) {
       roles.push('villager');
@@ -188,7 +309,6 @@ const startGame = (lobbyName) => {
     }
   };
 
-  // Durstenfeld shuffle algorithm to shuffle the roles array
   const shuffleArray = (array) => {
     for (let i = array.length - 1; i > 0; i -= 1) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -200,85 +320,67 @@ const startGame = (lobbyName) => {
 
   if (joinedCount > 6) {
     roles.push('werewolf');
-    const villagersToAdd = joinedCount - roles.length;
-    addVillagers(villagersToAdd);
-  } else if (joinedCount <= 6) {
-    const villagersToAdd = joinedCount - roles.length;
-    addVillagers(villagersToAdd);
   }
-
+  addVillagers(joinedCount - roles.length);
   shuffleArray(roles);
 
-  const playerKeys = Object.keys(lobby.players);
+  const playerKeys = Object.keys(lobby.players).filter((authId) => activePlayer(lobby.players[authId]));
 
-  // assign each player a role
-  let roleIndex = 0;
-  playerKeys.forEach((player) => {
-    if (!lobby.players[player].spectator) {
-      lobby.players[player].role = roles[roleIndex];
-      if (roles[roleIndex] === 'werewolf') {
-        lobby.werewolf.push(lobby.players[player]);
-      } else if (roles[roleIndex] === 'seer') {
-        lobby.seer = lobby.players[player];
-      }
-      roleIndex += 1;
-    }
+  lobby.werewolf = [];
+  lobby.seer = null;
+  Object.values(lobby.players).forEach((player) => {
+    player.role = null;
+    player.mayor = false;
   });
 
-  // randomly assign one non spectator to be the mayor
-  let mayorSelected = false;
-  while (!mayorSelected) {
-    const player = lobby.players[playerKeys[Math.floor(Math.random() * joinedCount)]];
-    if (!player.spectator) {
-      lobby.players[player.name].mayor = true;
-      lobby.mayor = player;
-      mayorSelected = true;
+  let roleIndex = 0;
+  playerKeys.forEach((authId) => {
+    const player = lobby.players[authId];
+    player.role = roles[roleIndex];
+    if (roles[roleIndex] === 'werewolf') {
+      lobby.werewolf.push(player);
+    } else if (roles[roleIndex] === 'seer') {
+      lobby.seer = player;
     }
-  }
+    roleIndex += 1;
+  });
 
-  // add a function to randomly select x number of words for the mayor to choose from
+  const mayor = lobby.players[playerKeys[Math.floor(Math.random() * playerKeys.length)]];
+  mayor.mayor = true;
+  lobby.mayor = mayor;
+
   for (let i = 0; i < lobby.pickCount; i += 1) {
     lobby.words.push(wordList[Math.floor(Math.random() * wordList.length)]);
   }
-  // lobby.words.push(wordList[Math.floor(Math.random() * wordList.length)]);
-  // lobby.words.push(wordList[Math.floor(Math.random() * wordList.length)]);
 
-  // changes the game state so the front end can change the display accordingly
   lobby.gameState = 'mayorPick';
-  // console.log(lobby);
-
-  // updates the lobby data
-  lobbies.set(lobbyName, lobby);
   return lobby;
 };
 
-const onMayorPick = (lobbyName, word) => {
+const onMayorPick = (lobbyName, word, requesterAuthId) => {
   const lobby = getLobby(lobbyName);
-  if (!lobby) {
+  if (!lobby || lobby.mayor?.authId !== requesterAuthId) {
     return null;
   }
-
-  // assigns the mayor's chosen word to the lobby
   lobby.chosenWord = word;
-
-  // changes the game state, and updates the lobby
   lobby.gameState = 'questionRound';
-  lobbies.set(lobbyName, lobby);
   return lobby;
 };
 
-const answerQuestion = (answer, question, lobbyName) => {
+const answerQuestion = (answer, question, lobbyName, requesterAuthId) => {
   const lobby = getLobby(lobbyName);
-  if (!lobby) {
+  if (!lobby || lobby.mayor?.authId !== requesterAuthId) {
     return null;
   }
   if (answer === 'discard') {
     lobby.questions.shift();
-    lobbies.set(lobbyName, lobby);
     return lobby;
   }
 
-  const player = lobby.players[question.name];
+  const player = lobby.players[question.authId || question.name];
+  if (!player) {
+    return null;
+  }
 
   if (answer === 'correct') {
     lobby.correct = question;
@@ -291,8 +393,7 @@ const answerQuestion = (answer, question, lobbyName) => {
     lobby.maybeTokens -= 1;
   } else if (answer === 'yes' || answer === 'no') {
     lobby.tokens -= 1;
-  } else { // in case answer is undefined or somethin else, although front end solves that
-    lobbies.set(lobbyName, lobby);
+  } else {
     return lobby;
   }
 
@@ -303,36 +404,32 @@ const answerQuestion = (answer, question, lobbyName) => {
   if (lobby.tokens === 0) {
     lobby.gameState = 'outOfTokens';
   }
-
-  // lobbies.set(lobbyName, lobby);
   return lobby;
 };
 
-const voteWerewolf = (player, lobbyName) => { // the villagers are voting
+const voteWerewolf = (player, lobbyName, requesterAuthId) => {
   const lobby = getLobby(lobbyName);
-  if (!lobby) {
+  if (!lobby || !activePlayer(lobby.players[requesterAuthId])) {
     return null;
   }
-  lobby.villagerVotes.push(player); // put who's werewolf here
+  lobby.villagerVotes.push(player);
   const joinedCount = Object.keys(lobby.players)
-    .reduce((prev, name) => (!lobby.players[name].spectator ? prev + 1 : prev), 0);
+    .reduce((prev, name) => (activePlayer(lobby.players[name]) ? prev + 1 : prev), 0);
   if (lobby.villagerVotes.length === (joinedCount - lobby.werewolf.length)) {
     lobby.gameState = 'endGame';
   }
-  lobbies.set(lobbyName, lobby);
   return lobby;
 };
 
-const voteSeer = (player, lobbyName) => { // the werewolfs are voting
+const voteSeer = (player, lobbyName, requesterAuthId) => {
   const lobby = getLobby(lobbyName);
-  if (!lobby) {
+  if (!lobby || lobby.players[requesterAuthId]?.role !== 'werewolf' || !activePlayer(lobby.players[requesterAuthId])) {
     return null;
   }
-  lobby.werewolfVotes.push(player); // put who's a seer here
+  lobby.werewolfVotes.push(player);
   if (lobby.werewolfVotes.length === lobby.werewolf.length) {
     lobby.gameState = 'endGame';
   }
-  lobbies.set(lobbyName, lobby);
   return lobby;
 };
 
@@ -342,7 +439,6 @@ const onTimeout = (lobbyName) => {
     return null;
   }
   lobby.gameState = 'outOfTime';
-  lobbies.set(lobbyName, lobby);
   return lobby;
 };
 
@@ -352,20 +448,17 @@ const afterVotingRound = (lobbyName) => {
     return null;
   }
   lobby.gameState = 'endGame';
-  lobbies.set(lobbyName, lobby);
   return lobby;
 };
 
-// implement logic and functions for the voting period
-
-const resetGame = (lobbyName) => {
+const resetGame = (lobbyName, requesterAuthId) => {
   const lobby = getLobby(lobbyName);
-  if (!lobby) {
+  if (!lobby || !(canModerate(lobby, requesterAuthId) || lobby.mayor?.authId === requesterAuthId)) {
     return null;
   }
 
-  Object.keys(lobby?.players).forEach((player) => {
-    lobby.players[player].tokens = {
+  Object.keys(lobby.players).forEach((authId) => {
+    lobby.players[authId].tokens = {
       yes: [],
       no: [],
       maybe: [],
@@ -373,6 +466,8 @@ const resetGame = (lobbyName) => {
       soClose: [],
       correct: [],
     };
+    lobby.players[authId].role = null;
+    lobby.players[authId].mayor = false;
   });
 
   lobby.mayor = null;
@@ -391,22 +486,74 @@ const resetGame = (lobbyName) => {
   lobby.maybeTokens = 12;
   lobby.villagerVotes = [];
   lobby.werewolfVotes = [];
-
-  lobbies.set(lobbyName, lobby);
   return lobby;
 };
 
-// pass the host if the host leaves
-
-const switchHost = (lobbyName) => {
+const promoteMod = (lobbyName, targetAuthId, requesterAuthId) => {
   const lobby = getLobby(lobbyName);
-  if (!lobby) {
+  if (!lobby || !lobby.players[targetAuthId] || !canModerate(lobby, requesterAuthId)) {
     return null;
   }
-
-  const playerName = Object.keys(lobby.players)[0];
-  lobby.host = playerName;
+  const requester = lobby.players[requesterAuthId];
+  if (requester.isOwner || requester.isMod) {
+    lobby.mods[targetAuthId] = true;
+    lobby.modPromoters[targetAuthId] = requesterAuthId;
+  } else {
+    lobby.tempMods[targetAuthId] = true;
+  }
+  refreshEffectiveMods(lobby);
   return lobby;
+};
+
+const demoteMod = (lobbyName, targetAuthId, requesterAuthId) => {
+  const lobby = getLobby(lobbyName);
+  if (!lobby || targetAuthId === lobby.ownerId) {
+    return null;
+  }
+  const requester = lobby.players[requesterAuthId];
+  if (!requester) {
+    return null;
+  }
+  const canDemote = requester.authId === lobby.ownerId || lobby.modPromoters[targetAuthId] === requesterAuthId;
+  if (!canDemote) {
+    return null;
+  }
+  delete lobby.mods[targetAuthId];
+  delete lobby.tempMods[targetAuthId];
+  delete lobby.modPromoters[targetAuthId];
+  if (lobby.activeTempModId === targetAuthId) {
+    lobby.activeTempModId = null;
+  }
+  touchModeration(lobbyName);
+  return lobby;
+};
+
+const resolveMigration = (lobbyName, migrationId) => {
+  const lobby = getLobby(lobbyName);
+  if (!lobby || !migrationId) {
+    return null;
+  }
+  const authId = lobby.authByMigration[migrationId];
+  if (!authId || !lobby.nameAssignments[authId]) {
+    return null;
+  }
+  return authId;
+};
+
+const getMigrationId = (lobbyName, targetAuthId, requesterAuthId) => {
+  const lobby = getLobby(lobbyName);
+  if (!lobby || !lobby.players[targetAuthId]) {
+    return null;
+  }
+  if (targetAuthId !== requesterAuthId && !canModerate(lobby, requesterAuthId)) {
+    return null;
+  }
+  if (!lobby.migrationByAuth[targetAuthId]) {
+    const token = crypto.randomBytes(18).toString('base64url');
+    lobby.migrationByAuth[targetAuthId] = token;
+    lobby.authByMigration[token] = targetAuthId;
+  }
+  return lobby.migrationByAuth[targetAuthId];
 };
 
 module.exports = {
@@ -418,6 +565,8 @@ module.exports = {
   toggleJoin,
   swapSeats,
   toggleSpectate,
+  setObserver,
+  rejoinFromObserver,
   onMayorPick,
   onTimeout,
   afterVotingRound,
@@ -428,5 +577,10 @@ module.exports = {
   answerQuestion,
   voteWerewolf,
   voteSeer,
-  switchHost,
+  promoteMod,
+  demoteMod,
+  resolveMigration,
+  getMigrationId,
+  touchModeration,
+  canModerate,
 };

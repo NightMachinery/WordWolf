@@ -3,16 +3,61 @@ import {
 } from '@chakra-ui/react';
 import Tokens from './Tokens';
 
+const seats = [
+  { id: 'seat1', color: '#E6474E', text: '#333', top: '-10', left: '175', token: { left: '185', bottom: '220' }, emptyToken: { left: '185', bottom: '220' } },
+  { id: 'seat6', color: '#164186', text: '#fff', top: '-10', left: '340', token: { left: '392', bottom: '260' }, emptyToken: { left: '392', bottom: '260' } },
+  { id: 'seat2', color: '#F18E35', text: '#333', top: '-10', left: '500', token: { left: '605', bottom: '300' }, emptyToken: { left: '605', bottom: '300' } },
+  { id: 'seat10', color: '#333333', text: '#fff', top: '5', left: '-2', token: { left: '50', bottom: '265' }, emptyToken: { left: '50', bottom: '265' } },
+  { id: 'seat8', color: '#D564D8', text: '#333', top: '5', left: '740', token: { left: '710', bottom: '305' }, emptyToken: { left: '710', bottom: '305' } },
+  { id: 'seat7', color: '#582C71', text: '#fff', top: '170', left: '-2', token: { left: '50', bottom: '230' }, emptyToken: { left: '50', bottom: '230' } },
+  { id: 'seat9', color: '#71362E', text: '#fff', top: '170', left: '740', token: { left: '710', bottom: '270' }, emptyToken: { left: '710', bottom: '270' } },
+  { id: 'seat3', color: '#F5D74C', text: '#333', top: '220', left: '175', token: { left: '185', bottom: '235' }, emptyToken: { left: '185', bottom: '335' } },
+  { id: 'seat5', color: '#55BFDB', text: '#333', top: '220', left: '340', token: { left: '392', bottom: '275' }, emptyToken: { left: '392', bottom: '275' } },
+  { id: 'seat4', color: '#54B877', text: '#333', top: '220', left: '500', token: { left: '605', bottom: '315' }, emptyToken: { left: '605', bottom: '315' } },
+];
+
+const rows = [seats.slice(0, 3), seats.slice(3, 5), seats.slice(5, 7), seats.slice(7, 10)];
+
+function SeatButton({ seat, player, loginData }) {
+  if (!player) {
+    return <Box name={seat.id} id={seat.color} as="button" w="70px" h="70px" pos="relative" top={seat.top} left={seat.left} />;
+  }
+  const self = player.authId === loginData.authId;
+  return (
+    <Box
+      name={seat.id}
+      id={seat.color}
+      as="button"
+      w="70px"
+      h="70px"
+      borderRadius="full"
+      background={seat.color}
+      borderWidth={self ? '8px' : '5px'}
+      borderColor={self ? '#FFFFFF' : seat.color}
+      outline={player.observer ? '4px dashed #fff' : undefined}
+      color={seat.text}
+      fontWeight="600"
+      pos="relative"
+      top={seat.top}
+      left={seat.left}
+      zIndex="999"
+      title={player.observer ? `${player.displayName} is an observer; seat is reserved` : player.displayName}
+    >
+      {(player.displayName || player.name || '').substring(0, 2).toUpperCase()}
+    </Box>
+  );
+}
+
 function GameTable({ tokenSetter, lobby, loginData }) {
   let viewWord;
 
-  if (lobby?.players[loginData.name].role !== 'villager') {
+  if (lobby?.players[loginData.authId]?.role !== 'villager') {
     viewWord = true;
-  } else if (lobby?.players[loginData.name].role === 'villager') {
-    if (loginData.name === lobby?.mayor.name) {
+  } else if (lobby?.players[loginData.authId]?.role === 'villager') {
+    if (loginData.authId === lobby?.mayor.authId) {
       viewWord = true;
     }
-  } else if (lobby?.players[loginData.name] === lobby?.mayor.name) {
+  } else if (lobby?.players[loginData.authId]?.authId === lobby?.mayor.authId) {
     viewWord = true;
   }
 
@@ -47,548 +92,29 @@ function GameTable({ tokenSetter, lobby, loginData }) {
       marginRight="200px"
       justify="center"
     >
-      <HStack>
-        {lobby?.seats?.seat1 ? (
+      {rows.map((row) => (
+        <HStack key={row.map((seat) => seat.id).join('-')}>
+          {row.map((seat) => <SeatButton key={seat.id} seat={seat} player={lobby.seats[seat.id]} loginData={loginData} />)}
+        </HStack>
+      ))}
+      {seats.map((seat, index) => {
+        const player = lobby.seats[seat.id];
+        const pos = player ? seat.token : seat.emptyToken;
+        return (
           <Box
-            // red
-            name="seat1"
-            id="#E6474E"
-            as="button"
-            w="70px"
-            h="70px"
-            borderRadius="full"
-            background="#E6474E"
-            borderWidth="5px"
-            borderColor="#E6474E"
-            color="#333"
-            fontWeight="600"
+            key={`tokens-${seat.id}`}
+            name={`tokens${index + 1}`}
             pos="relative"
-            top="-10"
-            left="175"
-            zIndex="999"
+            left={pos.left}
+            bottom={pos.bottom}
+            zIndex={player ? '999' : undefined}
+            w={player ? undefined : '30px'}
+            h={player ? undefined : '40px'}
           >
-            {lobby?.seats?.seat1?.name.substring(0, 2).toUpperCase()}
+            {player ? <Tokens tokenSetter={tokenSetter} lobby={lobby} seat={seat.id} /> : null}
           </Box>
-        ) : (
-          <Box
-            // red
-            name="seat1"
-            id="#E6474E"
-            as="button"
-            w="70px"
-            h="70px"
-            pos="relative"
-            top="-10"
-            left="175"
-          />
-        )}
-        {lobby?.seats?.seat6 ? (
-          <Box
-            name="seat6"
-            id="#164186"
-            as="button"
-            w="70px"
-            h="70px"
-            borderRadius="full"
-            background="#164186"
-            borderWidth="5px"
-            borderColor="#164186"
-            color="#fff"
-            fontWeight="600"
-            pos="relative"
-            top="-10"
-            left="340"
-            zIndex="999"
-          >
-            {lobby?.seats?.seat6?.name.substring(0, 2).toUpperCase()}
-          </Box>
-        ) : (
-          <Box
-            name="seat6"
-            w="70px"
-            h="70px"
-            pos="relative"
-            top="-10"
-            left="340"
-          />
-        )}
-        {lobby?.seats?.seat2 ? (
-          <Box
-            // orange
-            name="seat2"
-            id="#F18E35"
-            as="button"
-            w="70px"
-            h="70px"
-            borderRadius="full"
-            background="#F18E35"
-            borderWidth="5px"
-            borderColor="#F18E35"
-            color="#333"
-            fontWeight="600"
-            pos="relative"
-            top="-10"
-            left="500"
-            zIndex="999"
-          >
-            {lobby?.seats?.seat2?.name.substring(0, 2).toUpperCase()}
-          </Box>
-        ) : (
-          <Box
-            // orange
-            name="seat2"
-            id="#F18E35"
-            as="button"
-            w="70px"
-            h="70px"
-            pos="relative"
-            top="-10"
-            left="500"
-          />
-        )}
-      </HStack>
-      <HStack>
-        {lobby?.seats?.seat10 ? (
-          <Box
-            // black
-            name="seat10"
-            id="#333333"
-            as="button"
-            w="70px"
-            h="70px"
-            borderRadius="full"
-            background="#333333"
-            borderWidth="5px"
-            borderColor="#333333"
-            color="#fff"
-            fontWeight="600"
-            pos="relative"
-            top="5"
-            left="-2"
-            zIndex="999"
-          >
-            {lobby?.seats?.seat10?.name.substring(0, 2).toUpperCase()}
-          </Box>
-        ) : (
-          <Box
-            name="seat10"
-            w="70px"
-            h="70px"
-            pos="relative"
-            top="5"
-            left="-2"
-          />
-        )}
-        {lobby?.seats?.seat8 ? (
-          <Box
-            // pink
-            name="seat8"
-            id="#D564D8"
-            as="button"
-            w="70px"
-            h="70px"
-            borderRadius="full"
-            background="#D564D8"
-            borderWidth="5px"
-            borderColor="#D564D8"
-            color="#333"
-            fontWeight="600"
-            pos="relative"
-            top="5"
-            left="740"
-            zIndex="999"
-          >
-            {lobby?.seats?.seat8?.name.substring(0, 2).toUpperCase()}
-          </Box>
-        ) : (
-          <Box
-            name="seat8"
-            w="70px"
-            h="70px"
-            pos="relative"
-            top="5"
-            left="740"
-          />
-        )}
-      </HStack>
-      <HStack>
-        {lobby?.seats?.seat7 ? (
-          <Box
-            name="seat7"
-            id="#582C71"
-            as="button"
-            w="70px"
-            h="70px"
-            borderRadius="full"
-            background="#582C71"
-            borderWidth="5px"
-            borderColor="#582C71"
-            color="#fff"
-            fontWeight="600"
-            pos="relative"
-            top="170"
-            left="-2"
-            zIndex="999"
-          >
-            {lobby?.seats?.seat7?.name.substring(0, 2).toUpperCase()}
-          </Box>
-        ) : (
-          <Box
-            name="seat7"
-            w="70px"
-            h="70px"
-            pos="relative"
-            top="170"
-            left="-2"
-          />
-        )}
-        {lobby?.seats?.seat9 ? (
-          <Box
-            name="seat9"
-            id="#71362E"
-            as="button"
-            w="70px"
-            h="70px"
-            borderRadius="full"
-            background="#71362E"
-            borderWidth="5px"
-            borderColor="#71362E"
-            color="#fff"
-            fontWeight="600"
-            pos="relative"
-            top="170"
-            left="740"
-            zIndex="999"
-          >
-            {lobby?.seats?.seat9?.name.substring(0, 2).toUpperCase()}
-          </Box>
-        ) : (
-          <Box
-            name="seat9"
-            w="70px"
-            h="70px"
-            pos="relative"
-            top="170"
-            left="740"
-          />
-        )}
-      </HStack>
-      <HStack>
-        {lobby?.seats?.seat3 ? (
-          <Box
-            name="seat3"
-            id="#F5D74C"
-            as="button"
-            w="70px"
-            h="70px"
-            borderRadius="full"
-            background="#F5D74C"
-            borderWidth="5px"
-            borderColor="#F5D74C"
-            color="#333"
-            fontWeight="600"
-            pos="relative"
-            top="220"
-            left="175"
-            zIndex="999"
-          >
-            {lobby?.seats?.seat3?.name.substring(0, 2).toUpperCase()}
-          </Box>
-        ) : (
-          <Box
-            name="seat3"
-            id="#F5D74C"
-            as="button"
-            w="70px"
-            h="70px"
-            pos="relative"
-            top="220"
-            left="175"
-          />
-        )}
-        {lobby?.seats?.seat5 ? (
-          <Box
-            name="seat5"
-            id="#55BFDB"
-            as="button"
-            w="70px"
-            h="70px"
-            borderRadius="full"
-            background="#55BFDB"
-            borderWidth="5px"
-            borderColor="#55BFDB"
-            color="#333"
-            fontWeight="600"
-            pos="relative"
-            top="220"
-            left="340"
-            zIndex="999"
-          >
-            {lobby?.seats?.seat5?.name.substring(0, 2).toUpperCase()}
-          </Box>
-        ) : (
-          <Box
-            name="seat5"
-            w="70px"
-            h="70px"
-            pos="relative"
-            top="220"
-            left="340"
-          />
-        )}
-        {lobby?.seats?.seat4 ? (
-          <Box
-            name="seat4"
-            id="#54B877"
-            as="button"
-            w="70px"
-            h="70px"
-            borderRadius="full"
-            background="#54B877"
-            borderWidth="5px"
-            borderColor="#54B877"
-            color="#333"
-            fontWeight="600"
-            pos="relative"
-            top="220"
-            left="500"
-            zIndex="999"
-          >
-            {lobby?.seats?.seat4?.name.substring(0, 2).toUpperCase()}
-          </Box>
-        ) : (
-          <Box
-            name="seat4"
-            id="#54B877"
-            as="button"
-            w="70px"
-            h="70px"
-            pos="relative"
-            top="220"
-            left="500"
-          />
-        )}
-      </HStack>
-      {lobby?.seats?.seat1 ? (
-        <Box
-          // red
-          name="tokens1"
-          pos="relative"
-          left="185"
-          bottom="220"
-          zIndex="999"
-        >
-          <Tokens tokenSetter={tokenSetter} lobby={lobby} seat="seat1" />
-        </Box>
-      ) : (
-        <Box
-          // red
-          name="tokens1"
-          pos="relative"
-          left="185"
-          bottom="220"
-          w="30px"
-          h="40px"
-        />
-      )}
-      {lobby?.seats?.seat6 ? (
-        <Box
-          // blue
-          name="tokens6"
-          pos="relative"
-          left="392"
-          bottom="260"
-          zIndex="999"
-        >
-          <Tokens tokenSetter={tokenSetter} lobby={lobby} seat="seat6" />
-        </Box>
-      ) : (
-        <Box
-          // blue
-          name="tokens6"
-          pos="relative"
-          left="392"
-          bottom="260"
-          w="30px"
-          h="40px"
-        />
-      )}
-      {lobby?.seats?.seat2 ? (
-        <Box
-          // orange
-          name="tokens2"
-          pos="relative"
-          left="605"
-          bottom="300"
-          zIndex="999"
-        >
-          <Tokens tokenSetter={tokenSetter} lobby={lobby} seat="seat2" />
-        </Box>
-      ) : (
-        <Box
-          // orange
-          name="tokens2"
-          pos="relative"
-          left="605"
-          bottom="300"
-          w="30px"
-          h="40px"
-        />
-      )}
-      {lobby?.seats?.seat10 ? (
-        <Box
-          // black
-          name="tokens10"
-          pos="relative"
-          left="50"
-          bottom="265"
-          zIndex="999"
-        >
-          <Tokens tokenSetter={tokenSetter} lobby={lobby} seat="seat10" />
-        </Box>
-      ) : (
-        <Box
-          // black
-          name="tokens10"
-          pos="relative"
-          left="50"
-          bottom="265"
-          w="30px"
-          h="40px"
-        />
-      )}
-      {lobby?.seats?.seat8 ? (
-        <Box
-          // pink
-          name="tokens8"
-          pos="relative"
-          left="710"
-          bottom="305"
-          zIndex="999"
-        >
-          <Tokens tokenSetter={tokenSetter} lobby={lobby} seat="seat8" />
-        </Box>
-      ) : (
-        <Box
-          // pink
-          name="tokens8"
-          pos="relative"
-          left="710"
-          bottom="305"
-          w="30px"
-          h="40px"
-        />
-      )}
-      {lobby?.seats?.seat7 ? (
-        <Box
-          // purple
-          name="tokens7"
-          pos="relative"
-          left="50"
-          bottom="230"
-          zIndex="999"
-        >
-          <Tokens tokenSetter={tokenSetter} lobby={lobby} seat="seat7" />
-        </Box>
-      ) : (
-        <Box
-          // purple
-          name="tokens7"
-          pos="relative"
-          left="50"
-          bottom="230"
-          w="30px"
-          h="40px"
-        />
-      )}
-      {lobby?.seats?.seat9 ? (
-        <Box
-          // brown
-          name="tokens9"
-          pos="relative"
-          left="710"
-          bottom="270"
-          zIndex="999"
-        >
-          <Tokens tokenSetter={tokenSetter} lobby={lobby} seat="seat9" />
-        </Box>
-      ) : (
-        <Box
-          // brown
-          name="tokens9"
-          pos="relative"
-          left="710"
-          bottom="270"
-          w="30px"
-          h="40px"
-        />
-      )}
-      {lobby?.seats?.seat3 ? (
-        <Box
-          // yellow
-          name="tokens3"
-          pos="relative"
-          left="185"
-          bottom="235"
-          zIndex="999"
-        >
-          <Tokens tokenSetter={tokenSetter} lobby={lobby} seat="seat3" />
-        </Box>
-      ) : (
-        <Box
-          // yellow
-          name="tokens3"
-          pos="relative"
-          left="185"
-          bottom="335"
-          w="30px"
-          h="40px"
-        />
-      )}
-      {lobby?.seats?.seat5 ? (
-        <Box
-          // lblue
-          name="tokens5"
-          pos="relative"
-          left="392"
-          bottom="275"
-          zIndex="999"
-        >
-          <Tokens tokenSetter={tokenSetter} lobby={lobby} seat="seat5" />
-        </Box>
-      ) : (
-        <Box
-          // lblue
-          name="tokens5"
-          pos="relative"
-          left="392"
-          bottom="275"
-          w="30px"
-          h="40px"
-        />
-      )}
-      {lobby?.seats?.seat4 ? (
-        <Box
-          // green
-          name="tokens4"
-          pos="relative"
-          left="605"
-          bottom="315"
-          zIndex="999"
-        >
-          <Tokens tokenSetter={tokenSetter} lobby={lobby} seat="seat4" />
-        </Box>
-      ) : (
-        <Box
-          // green
-          name="tokens4"
-          pos="relative"
-          left="605"
-          bottom="315"
-          w="30px"
-          h="40px"
-        />
-      )}
+        );
+      })}
       <VStack
         pos="relative"
         bottom="425"

@@ -1,28 +1,53 @@
 import { Box, HStack } from '@chakra-ui/react';
 
-function LobbyTable({ toggleJoin, lobby }) {
+const seats = [
+  [{ id: 'seat1', color: '#E6474E', text: '#333', top: '-10', left: '175' }, { id: 'seat6', color: '#164186', text: '#fff', top: '-10', left: '340' }, { id: 'seat2', color: '#F18E35', text: '#333', top: '-10', left: '500' }],
+  [{ id: 'seat10', color: '#333333', text: '#fff', top: '5', left: '-2' }, { id: 'seat8', color: '#D564D8', text: '#333', top: '5', left: '740' }],
+  [{ id: 'seat7', color: '#582C71', text: '#fff', top: '170', left: '-2' }, { id: 'seat9', color: '#71362E', text: '#fff', top: '170', left: '740' }],
+  [{ id: 'seat3', color: '#F5D74C', text: '#333', top: '220', left: '175' }, { id: 'seat5', color: '#55BFDB', text: '#333', top: '220', left: '340' }, { id: 'seat4', color: '#54B877', text: '#333', top: '220', left: '500' }],
+];
+
+function initials(player) {
+  return (player?.displayName || player?.name || '').substring(0, 2).toUpperCase();
+}
+
+function Seat({ seat, lobby, loginData, toggleJoin }) {
+  const player = lobby.seats[seat.id];
+  const self = player?.authId === loginData?.authId;
+  return (
+    <Box
+      name={seat.id}
+      id={seat.color}
+      as="button"
+      w="70px"
+      h="70px"
+      borderRadius="full"
+      background={player ? seat.color : '#C4C4C4'}
+      borderWidth={self ? '8px' : '5px'}
+      borderColor={self ? '#FFFFFF' : seat.color}
+      outline={player?.observer ? '4px dashed #fff' : undefined}
+      color={seat.text}
+      fontWeight="600"
+      pos="relative"
+      top={seat.top}
+      left={seat.left}
+      fontSize="24px"
+      title={player?.observer ? `${player.displayName} is an observer; seat is reserved` : player?.displayName}
+      onClick={(e) => toggleJoin(e)}
+    >
+      {initials(player)}
+    </Box>
+  );
+}
+
+function LobbyTable({ toggleJoin, lobby, loginData }) {
   return (
     <Box className="lobby-table" w="900px" h="485px" background="#3A4171" borderWidth="10px" borderColor="#D19E61" borderRadius="full" bgGradient="linear(to-r, #3A4171, #2d3664)" marginRight="200px" justify="center" pos="fixed">
-      <HStack>
-        <Box name="seat1" id="#E6474E" as="button" w="70px" h="70px" borderRadius="full" background={lobby.seats.seat1 ? '#E6474E' : '#C4C4C4'} borderWidth="5px" borderColor="#E6474E" color="#333" fontWeight="600" pos="relative" top="-10" left="175" fontSize="24px" onClick={(e) => toggleJoin(e)}>{lobby?.seats?.seat1?.name.substring(0, 2).toUpperCase()}</Box>
-        <Box name="seat6" id="#164186" as="button" w="70px" h="70px" borderRadius="full" background={lobby.seats.seat6 ? '#164186' : '#C4C4C4'} borderWidth="5px" borderColor="#164186" color="#fff" fontWeight="600" pos="relative" top="-10" left="340" fontSize="24px" onClick={(e) => toggleJoin(e)}>{lobby?.seats?.seat6?.name.substring(0, 2).toUpperCase()}</Box>
-        <Box name="seat2" id="#F18E35" as="button" w="70px" h="70px" borderRadius="full" background={lobby.seats.seat2 ? '#F18E35' : '#C4C4C4'} borderWidth="5px" borderColor="#F18E35" color="#333" fontWeight="600" pos="relative" top="-10" left="500" fontSize="24px" onClick={(e) => toggleJoin(e)}>{lobby?.seats?.seat2?.name.substring(0, 2).toUpperCase()}</Box>
-      </HStack>
-      <HStack>
-        <Box name="seat10" id="#333333" as="button" w="70px" h="70px" borderRadius="full" background={lobby.seats.seat10 ? '#333333' : '#C4C4C4'} borderWidth="5px" borderColor="#333333" color="#fff" fontWeight="600" pos="relative" top="5" left="-2" fontSize="24px" onClick={(e) => toggleJoin(e)}>{lobby?.seats?.seat10?.name.substring(0, 2).toUpperCase()}</Box>
-        <Box name="seat8" id="#D564D8" as="button" w="70px" h="70px" borderRadius="full" background={lobby.seats.seat8 ? '#D564D8' : '#C4C4C4'} borderWidth="5px" borderColor="#D564D8" color="#333" fontWeight="600" pos="relative" top="5" left="740" fontSize="24px" onClick={(e) => toggleJoin(e)}>{lobby?.seats?.seat8?.name.substring(0, 2).toUpperCase()}</Box>
-      </HStack>
-      <HStack>
-        <Box name="seat7" id="#582C71" as="button" w="70px" h="70px" borderRadius="full" background={lobby.seats.seat7 ? '#582C71' : '#C4C4C4'} borderWidth="5px" borderColor="#582C71" color="#fff" fontWeight="600" pos="relative" top="170" left="-2" fontSize="24px" onClick={(e) => toggleJoin(e)}>{lobby?.seats?.seat7?.name.substring(0, 2).toUpperCase()}</Box>
-        <Box name="seat9" id="#71362E" as="button" w="70px" h="70px" borderRadius="full" background={lobby.seats.seat9 ? '#71362E' : '#C4C4C4'} borderWidth="5px" borderColor="#71362E" color="#fff" fontWeight="600" pos="relative" top="170" left="740" fontSize="24px" onClick={(e) => toggleJoin(e)}>
-          {lobby?.seats?.seat9?.name.substring(0, 2).toUpperCase()}
-        </Box>
-      </HStack>
-      <HStack>
-        <Box name="seat3" id="#F5D74C" as="button" w="70px" h="70px" borderRadius="full" background={lobby.seats.seat3 ? '#F5D74C' : '#C4C4C4'} borderWidth="5px" borderColor="#F5D74C" color="#333" fontWeight="600" pos="relative" top="220" left="175" fontSize="24px" onClick={(e) => toggleJoin(e)}>{lobby?.seats?.seat3?.name.substring(0, 2).toUpperCase()}</Box>
-        <Box name="seat5" id="#55BFDB" as="button" w="70px" h="70px" borderRadius="full" background={lobby.seats.seat5 ? '#55BFDB' : '#C4C4C4'} borderWidth="5px" borderColor="#55BFDB" color="#333" fontWeight="600" pos="relative" top="220" left="340" fontSize="24px" onClick={(e) => toggleJoin(e)}>{lobby?.seats?.seat5?.name.substring(0, 2).toUpperCase()}</Box>
-        <Box name="seat4" id="#54B877" as="button" w="70px" h="70px" borderRadius="full" background={lobby.seats.seat4 ? '#54B877' : '#C4C4C4'} borderWidth="5px" borderColor="#54B877" color="#333" fontWeight="600" pos="relative" top="220" left="500" fontSize="24px" onClick={(e) => toggleJoin(e)}>{lobby?.seats?.seat4?.name.substring(0, 2).toUpperCase()}</Box>
-      </HStack>
+      {seats.map((row) => (
+        <HStack key={row.map((seat) => seat.id).join('-')}>
+          {row.map((seat) => <Seat key={seat.id} seat={seat} lobby={lobby} loginData={loginData} toggleJoin={toggleJoin} />)}
+        </HStack>
+      ))}
     </Box>
   );
 }

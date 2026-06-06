@@ -1,16 +1,3 @@
-/* eslint-disable padded-blocks */
-/* eslint-disable no-multiple-empty-lines */
-/*
-RFP2202-Blue-Ocean-Avengers BOA
-Amy Kwak, Andy Chan, Anny Wang, Bogdan Gordin, Casey Eads, Danny Wong, Eunice Kim
-5/8/22
-Blue Ocean
-modal for the villager, mayor and seer roles to vote on the werewolf if the word has been gussed
-the vote is selected with a table select
-needs the lobby
-the key={`key-${p}`} inside of the <option> is so to remove the warning errors in the chrome dev log
-*/
-
 import {
   Modal,
   ModalHeader,
@@ -34,7 +21,7 @@ function VillagerVote({ lobby, loginData }) {
     if (currVote === '---') {
       return;
     }
-    socket.emit('VoteWerewolf', { player: lobby?.players[currVote], lobbyName: lobby?.name });
+    socket.emit('VoteWerewolf', { player: lobby?.players[currVote], lobbyName: lobby?.name, requesterAuthId: loginData.authId });
     setVoted(true);
   };
 
@@ -47,18 +34,18 @@ function VillagerVote({ lobby, loginData }) {
       <ModalOverlay />
       <ModalContent display="flex" justifyContent="center" alignItems="center" textAlign="center">
         <ModalHeader>
-          {lobby?.players[loginData.name].role !== 'werewolf'
+          {lobby?.players[loginData.authId]?.role !== 'werewolf'
             ? <h1>WHO IS THE WOLF?</h1> : <h1>VOTING ROUND</h1>}
         </ModalHeader>
         <ModalBody>
-          {lobby?.players[loginData.name].role !== 'werewolf'
+          {lobby?.players[loginData.authId]?.role !== 'werewolf'
             ? (
               <Box display="flex" flexDirection="column">
                 <ChooseW id="PlayersDrop" name="players" onChange={(e) => { pickedDrop(e); }}>
                   <option value="DEFAULT" selected disabled>---</option>
                   {lobby && Object.keys(lobby?.players)
-                    .map((p) => ((loginData.name !== p) && (lobby.players[p].spectator === false))
-                      && <option value={p}>{p}</option>)}
+                    .map((p) => ((loginData.authId !== p) && (lobby.players[p].spectator === false && lobby.players[p].observer === false))
+                      && <option value={p}>{lobby.players[p].displayName}</option>)}
                 </ChooseW>
                 {voted ? null : <Box as="button" marginTop="10" backgroundColor="#C4C4C4" id="Submit" type="button" onClick={(e) => { clickedOnButton(e); }}>SUBMIT</Box>}
               </Box>
