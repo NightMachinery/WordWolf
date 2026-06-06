@@ -1,0 +1,1 @@
+- After finishing and committing, if you haven't already, run `zsh ./self_host.zsh redeploy` (or the Python equivalent) in tmux session `<repo-name>-setup`. Wait 120s before checking the logs in the session after sending the command.
