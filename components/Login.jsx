@@ -26,13 +26,13 @@ function Login({ loginData, handleFormChange, handleCreateLobby, handleJoinLobby
         </span>
         {/* Login Pic */}
         <Image src={LoginBanner} style={{ borderRadius: '30px' }} />
-        <span style={{ background: '#fff', marginTop: '20px' }}>Enter Username:</span>
+        <span style={{ background: '#fff', marginTop: '20px' }}>Enter Display Name:</span>
         <Input
           type="text"
           size="md"
           width="25%"
           height="50px"
-          placeholder="Username"
+          placeholder="Display Name"
           name="name"
           value={loginData?.name || ''}
           onChange={(e) => handleFormChange(e)}

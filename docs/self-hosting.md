@@ -56,7 +56,7 @@ Production Caddy serves Next static assets directly from `.next/static` and publ
 
 ## Identity and moderation
 
-User identity is a random auth token stored in browser localStorage. Server room state is in memory and may reset on process restart; the browser's auth token/display name remains available locally.
+Users enter one visible **display name**. Identity is a hidden random auth token stored in browser localStorage alongside that display name. Server room state is in memory and may reset on process restart; the browser's auth token/display name remains available locally. If duplicate display names join the same room, stable room-scoped numbers are appended automatically.
 
 Spectators and observers are separate states:
 
