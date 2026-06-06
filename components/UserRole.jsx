@@ -1,7 +1,4 @@
 import Image from 'next/image';
-import Wolf from '../assets/wolf.jpeg';
-import Seer from '../assets/seer.jpeg';
-import Villager from '../assets/villager.jpeg';
 
 import {
   RoleContainer,
@@ -21,7 +18,7 @@ function UserRole({ roles }) {
               ? (
                 <UserRolePhotoContainer>
                   <Img>
-                    <Image src={Seer} />
+                    <Image src="/seer.jpeg" width={160} height={160} />
                   </Img>
                   <Banner>SEER</Banner>
                 </UserRolePhotoContainer>
@@ -30,7 +27,7 @@ function UserRole({ roles }) {
               ? (
                 <UserRolePhotoContainer>
                   <Img>
-                    <Image src={Villager} />
+                    <Image src="/villager.jpeg" width={160} height={160} />
                   </Img>
                   <Banner>VILLAGER</Banner>
                 </UserRolePhotoContainer>
@@ -39,7 +36,7 @@ function UserRole({ roles }) {
               ? (
                 <UserRolePhotoContainer>
                   <Img>
-                    <Image src={Wolf} />
+                    <Image src="/wolf.jpeg" width={160} height={160} />
                   </Img>
                   <Banner>WOLF</Banner>
                 </UserRolePhotoContainer>

@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import { Box } from '@chakra-ui/react';
-import Mayor from '../assets/mayor.jpeg';
 import {
   BannerContainer,
   MayorBanner,
@@ -15,7 +14,7 @@ function MayorDisplay({ mayor, lobby }) {
   return (
     <UserRolePhotoContainer>
       <Img>
-        <Image src={Mayor} />
+        <Image src="/mayor.jpeg" width={160} height={160} />
       </Img>
       <BannerContainer>
         <MayorBanner>MAYOR</MayorBanner>

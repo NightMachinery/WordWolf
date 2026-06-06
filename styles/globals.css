@@ -1,7 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Koulen&display=swap');
-
 * {
-  font-family: 'Koulen', cursive;
+  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
 }
 .background {
   background-image: url("/Background.svg");
@@ -112,4 +110,12 @@ text-align: center;
   height: 62px;
   background: #FFF;
   font-size: 30px;
+}
+
+.self-user {
+  background: #fff3a3;
+  color: #111;
+  border-radius: 4px;
+  padding: 0 4px;
+  font-weight: 700;
 }

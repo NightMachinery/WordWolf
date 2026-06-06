@@ -66,10 +66,7 @@ function Rules() {
               <div>
                 <strong style={{ 'font-size': '30px' }}>How To Play WordWolf</strong>
                 <br />
-                The original game rules are available on
-                <a rel="noreferrer" target="_blank" href="https://werewords.com/rules.php?ver=3">
-                  <u> the publisher site. </u>
-                </a>
+                The rules summary below is bundled locally for intranet play.
                 <br />
                 <strong> Summary: </strong>
                 <p>  In WordWolf, players are asking yes/no questions to guess a magic word before the time is up. Seer and Wolves know the magic words and are trying to help or hinder the Villagers from guessing the word by asking helpful or misleading questions while keeping their identity concealed. </p>
@@ -78,9 +75,9 @@ function Rules() {
                 <p>  To play wordwolf, you need at least 4 players, although we recommend playing with no less than 5 players. With an upper limit of 10 players in a game. (You can always play in multiple lobbies.)</p>
 
                 <strong> Gameplay: </strong>
-                <p>  The game starts by one player becoming the mayor or chosing a mayor at random. The mayor then choses a magic word and all players (including the mayor) are assigned a hidden role. The default roles are Villager, Seer and Wolf with the Villagers and the Seer being on the Village team and the Wolves being on the Wolf team. For more advanced roles, see the Role overview. The Villagers and the Seer know nothing about other players' roles, while the Wolves know each other. The Seer and the Wolves know the magic word.</p>
+                <p>  The game starts by one player becoming the mayor or choosing a mayor at random. The mayor then chooses a magic word and all players (including the mayor) are assigned a hidden role. The default roles are Villager, Seer and Wolf with the Villagers and the Seer being on the Village team and the Wolves being on the Wolf team. For more advanced roles, see the Role overview. The Villagers and the Seer know nothing about other players' roles, while the Wolves know each other. The Seer and the Wolves know the magic word.</p>
 
-                <p>  Once the mayor has chosen the magic word, all players ask yes/no questions about the magic word, which the mayor answers with "yes", "no", "maybe" or "so close". This continues untill either the magic word is guessed, the timer runs out or all tokens are used up.</p>
+                <p>  Once the mayor has chosen the magic word, all players ask yes/no questions about the magic word, which the mayor answers with "yes", "no", "maybe" or "so close". This continues until either the magic word is guessed, the timer runs out or all tokens are used up.</p>
 
                 <p>  If the magic word was guessed, a vote for the Wolf team is started, in which they can try to guess and vote for the Seer. If they guess correctly, the Wolf team wins. If they do not guess correctly, the Village team wins.</p>
 
