@@ -33,7 +33,7 @@ function GameChat({ players, username }) {
       return;
     }
     const data = {
-      id: uuid(), name: username, lobby: lobby.name, message,
+      id: uuid(), authId: username, name: players[username]?.displayName || players[username]?.name || username, lobby: lobby.name, message,
     };
     if (isQuestion) { data.question = true; } else { data.question = false; }
     await socket.emit('newGameMessage', data, lobby.name);
@@ -49,7 +49,7 @@ function GameChat({ players, username }) {
         {allMessages?.map((msg) => <Message key={msg.id} message={msg} players={players} />)}
       </ReactScrollableFeed>
 
-      {(!players || !players[username].spectator) ? (
+      {(!players || (!players[username].spectator && !players[username].observer)) ? (
         <div style={{
           display: 'flex', justifyContent: 'space-between', padding: '10px', backgroundColor: 'white',
         }}

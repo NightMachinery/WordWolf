@@ -6,7 +6,7 @@ import Credits from './Credits';
 import LoginLogo from '../assets/LoginLogo.svg';
 import LoginBanner from '../assets/LoginBanner.svg';
 
-function Login({ handleFormChange, handleCreateLobby, handleJoinLobby }) {
+function Login({ loginData, handleFormChange, handleCreateLobby, handleJoinLobby }) {
   return (
     <Box
       style={{
@@ -34,6 +34,7 @@ function Login({ handleFormChange, handleCreateLobby, handleJoinLobby }) {
           height="50px"
           placeholder="Username"
           name="name"
+          value={loginData?.name || ''}
           onChange={(e) => handleFormChange(e)}
           style={{ width: '100%' }}
         />
@@ -46,6 +47,7 @@ function Login({ handleFormChange, handleCreateLobby, handleJoinLobby }) {
           height="50px"
           placeholder="Lobby Name"
           name="lobby"
+          value={loginData?.lobby || ''}
           onChange={(e) => handleFormChange(e)}
           style={{ width: '100%', marginBottom: '5px' }}
         />

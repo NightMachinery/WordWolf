@@ -10,20 +10,24 @@ function Home() {
 
   const handleFormChange = (e) => {
     e.preventDefault();
-    setLoginData({ ...loginData, [e.target.name]: e.target.value });
+    setLoginData({ [e.target.name]: e.target.value });
+  };
+
+  const saveAndRoute = (create) => {
+    setLoginData({ create });
+    router.push(`/${loginData.lobby}/lobby`);
   };
 
   const handleCreateLobby = async (e) => {
     e.preventDefault();
-    if (loginData.name && loginData.lobby) {
+    if (loginData.name && loginData.lobby && loginData.authId) {
       axios
         .get('/createLobby', { params: { loginData } })
         .then((res) => {
           if (res.data === 'ok') {
-            setLoginData({ ...loginData, create: true });
-            router.push(`/${loginData.lobby}/lobby`);
+            saveAndRoute(true);
           } else {
-            alert('lobby name already taken');
+            alert(res.data === 'error' ? 'lobby name already taken' : res.data);
           }
         })
         .catch((err) => new Error(err));
@@ -34,13 +38,12 @@ function Home() {
 
   const handleJoinLobby = async (e) => {
     e.preventDefault();
-    if (loginData.name && loginData.lobby) {
+    if (loginData.name && loginData.lobby && loginData.authId) {
       axios
         .get('/joinLobby', { params: { loginData } })
         .then((res) => {
           if (res.data === 'ok') {
-            setLoginData({ ...loginData, create: false });
-            router.push(`/${loginData.lobby}/lobby`);
+            saveAndRoute(false);
           } else {
             alert(res.data);
           }
@@ -53,6 +56,7 @@ function Home() {
 
   return (
     <Login
+      loginData={loginData}
       handleFormChange={handleFormChange}
       handleCreateLobby={handleCreateLobby}
       handleJoinLobby={handleJoinLobby}

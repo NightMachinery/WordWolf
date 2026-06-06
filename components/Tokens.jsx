@@ -1,7 +1,7 @@
 import { Button, Box } from '@chakra-ui/react';
 
 function Tokens({ tokenSetter, lobby, seat }) {
-  const playerName = lobby?.seats[seat]?.name;
+  const playerName = lobby?.seats[seat]?.authId;
 
   return (
     <Box>

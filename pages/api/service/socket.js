@@ -1,3 +1,7 @@
 import io from 'socket.io-client';
 
-export const socket = io();
+const socketUrl = typeof window === 'undefined' ? undefined : window.location.origin;
+
+export const socket = io(socketUrl, {
+  transports: ['websocket', 'polling'],
+});

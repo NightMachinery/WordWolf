@@ -4,12 +4,13 @@ import { StoreContext } from '../../pages/api/contextStore';
 
 function Message({ message }) {
   const { lobby } = useContext(StoreContext);
-  const { name } = message;
+  const { authId, name } = message;
   const [color, setColor] = useState('black');
 
   useEffect(() => {
-    if (lobby.players[name]?.color) {
-      setColor(lobby.players[name].color);
+    const player = lobby.players[authId] || Object.values(lobby.players).find((p) => p.name === name || p.displayName === name);
+    if (player?.color) {
+      setColor(player.color);
     }
   }, [lobby]);
 
