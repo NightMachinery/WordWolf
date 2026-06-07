@@ -1,4 +1,4 @@
-import { useEffect, useContext } from 'react';
+import { useEffect, useContext, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 import { StoreContext, storageKey } from '../api/contextStore';
@@ -12,6 +12,7 @@ function Container() {
     lobby, setLobby, loginData, setLoginData,
     setSoClose, setWayOff, setCorrect, setVoted,
   } = useContext(StoreContext);
+  const [roomError, setRoomError] = useState(null);
 
   const lobbyName = router.query.lobby || loginData.lobby;
 
@@ -33,14 +34,50 @@ function Container() {
           window.localStorage.setItem(storageKey, JSON.stringify({ authId, name }));
         }
       } catch (_) {
-        alert('migration link is invalid or expired');
+        setRoomError({
+          title: 'Room not found',
+          message: 'This migration link is invalid, expired, or belongs to a room that is no longer active.',
+          room: lobbyName,
+        });
+        return;
       }
     }
 
     const emit = loginData.create ? 'createLobby' : 'joinLobby';
     const payload = { name, lobby: lobbyName, authId };
+    if (!loginData.create) {
+      try {
+        const res = await axios.get('/joinLobby', { params: { loginData: payload } });
+        if (res.data === 'lobby name not found') {
+          setRoomError({
+            title: 'Room not found',
+            message: 'This room does not exist or is no longer active.',
+            room: lobbyName,
+          });
+          return;
+        }
+        if (res.data !== 'ok') {
+          setRoomError({
+            title: 'Unable to join room',
+            message: res.data,
+            room: lobbyName,
+          });
+          return;
+        }
+      } catch (_) {
+        setRoomError({
+          title: 'Unable to join room',
+          message: 'The room could not be checked. Please try again.',
+          room: lobbyName,
+        });
+        return;
+      }
+    }
     if (payload.name && payload.lobby && payload.authId) {
+      setRoomError(null);
       socket.emit(emit, payload);
+    } else if (!payload.name && !loginData.create) {
+      router.push(`/?lobby=${encodeURIComponent(lobbyName)}`);
     } else {
       router.push('/');
     }
@@ -235,6 +272,22 @@ function Container() {
         return null;
     }
   };
+
+  if (roomError) {
+    return (
+      <div className="room-error-page">
+        <div className="room-error-card">
+          <h1>{roomError.title}</h1>
+          <p>{roomError.message}</p>
+          {roomError.room ? <div className="room-error-name">{roomError.room}</div> : null}
+          <div className="room-error-actions">
+            <button type="button" onClick={() => router.push('/')}>Create a new room</button>
+            <button type="button" onClick={() => router.push('/')}>Back home</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

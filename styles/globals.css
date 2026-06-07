@@ -174,3 +174,69 @@ text-align: center;
   background: #3A4171 !important;
   color: #FFF !important;
 }
+
+.room-error-page {
+  min-height: 100vh;
+  width: 100vw;
+  background-image: url("/Background.svg");
+  background-size: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.room-error-card {
+  width: min(520px, 90vw);
+  background: rgba(33, 30, 50, 0.94);
+  border: 3px solid #D19E61;
+  border-radius: 18px;
+  padding: 32px;
+  text-align: center;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+
+.room-error-card h1 {
+  color: #D19E61;
+  font-size: 42px;
+  margin-bottom: 12px;
+}
+
+.room-error-card p {
+  font-size: 22px;
+  line-height: 1.35;
+}
+
+.room-error-name {
+  margin: 18px auto;
+  padding: 10px 14px;
+  border: 1px solid #D19E61;
+  background: #111;
+  color: #D19E61;
+  border-radius: 10px;
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}
+
+.room-error-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.room-error-actions button {
+  background: #D19E61;
+  color: #111;
+  border: 0;
+  border-radius: 0;
+  padding: 12px 18px;
+  font-size: 20px;
+}
+
+.room-error-actions button:last-child {
+  background: #211E32;
+  color: #D19E61;
+  border: 1px solid #D19E61;
+}
