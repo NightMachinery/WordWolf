@@ -6,7 +6,9 @@ import Credits from './Credits';
 import LoginLogo from '../assets/LoginLogo.svg';
 import LoginBanner from '../assets/LoginBanner.svg';
 
-function Login({ loginData, handleFormChange, handleCreateLobby, handleJoinLobby }) {
+function Login({
+  loginData, joinLobbyName, handleFormChange, handleCreateLobby, handleJoinLobby,
+}) {
   return (
     <Box
       style={{
@@ -15,7 +17,7 @@ function Login({ loginData, handleFormChange, handleCreateLobby, handleJoinLobby
     >
       <Image src={LoginLogo} />
       <form style={{
-        width: '550px', height: '600px', background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '10px 80px', marginTop: '10px', marginBottom: '40px',
+        width: '550px', height: '520px', background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '10px 80px', marginTop: '10px', marginBottom: '40px',
       }}
       >
         <span style={{
@@ -38,20 +40,11 @@ function Login({ loginData, handleFormChange, handleCreateLobby, handleJoinLobby
           onChange={(e) => handleFormChange(e)}
           style={{ width: '100%' }}
         />
-        <br />
-        <span style={{ background: '#fff' }}>Enter Lobby Name:</span>
-        <Input
-          type="text"
-          size="md"
-          width="25%"
-          height="50px"
-          placeholder="Lobby Name"
-          name="lobby"
-          value={loginData?.lobby || ''}
-          onChange={(e) => handleFormChange(e)}
-          style={{ width: '100%', marginBottom: '5px' }}
-        />
-        <br />
+        <Box background="#fff" fontSize="14px" marginTop="10px" marginBottom="15px">
+          {joinLobbyName
+            ? `Joining room: ${joinLobbyName}`
+            : 'Open a room link to join an existing room, or create a new room.'}
+        </Box>
         <Button h="50px" w="100%" onClick={(e) => handleJoinLobby(e)} style={{ marginBottom: '20px' }} borderRadius="0px" fontSize="24px">
           Join
         </Button>
