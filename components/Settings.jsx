@@ -13,6 +13,9 @@ import {
   NumberInputStepper,
   NumberIncrementStepper,
   NumberDecrementStepper,
+  Checkbox,
+  CheckboxGroup,
+  Stack,
 } from '@chakra-ui/react';
 
 import { useState, useEffect } from 'react';
@@ -20,7 +23,7 @@ import Image from 'next/image';
 import SettingsIcon from '../assets/SettingsIcon.svg';
 
 function Settings({
-  updatePickCount, updateTimer, updateSaveTimer, lobby,
+  updatePickCount, updateTimer, updateSaveTimer, updateMayorRoleSettings, lobby,
 }) {
   const {
     isOpen: isSettingsOpen,
@@ -30,6 +33,11 @@ function Settings({
   const [minuteValue,
     setMinuteValue] = useState(lobby.timer < 0 ? 1 : lobby.timer);
   const [wordAmount, setWordAmount] = useState(lobby.pickCount ? lobby.pickCount : 2);
+  const [mayorRoles, setMayorRoles] = useState(
+    Object.keys(lobby.mayorRoleEligibility || { villager: true }).filter(
+      (role) => lobby.mayorRoleEligibility[role],
+    ),
+  );
 
   useEffect(() => {
     updateTimer({ minutes: minuteValue, seconds: 0 }, lobby);
@@ -39,6 +47,14 @@ function Settings({
   useEffect(() => {
     updatePickCount(wordAmount);
   }, [wordAmount]);
+
+  useEffect(() => {
+    updateMayorRoleSettings({
+      villager: mayorRoles.includes('villager'),
+      seer: mayorRoles.includes('seer'),
+      werewolf: mayorRoles.includes('werewolf'),
+    });
+  }, [mayorRoles]);
 
   const handleChange = (value) => {
     setMinuteValue(value);
@@ -98,6 +114,15 @@ function Settings({
                 </NumberInput>
               </li>
             </ul>
+            <br />
+            Roles available to Mayor:
+            <CheckboxGroup value={mayorRoles} onChange={setMayorRoles}>
+              <Stack spacing={2} direction="column" marginTop="8px">
+                <Checkbox value="villager">Villager</Checkbox>
+                <Checkbox value="seer">Seer</Checkbox>
+                <Checkbox value="werewolf">Wolf</Checkbox>
+              </Stack>
+            </CheckboxGroup>
           </ModalBody>
 
           <ModalFooter>

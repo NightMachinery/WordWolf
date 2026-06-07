@@ -4,19 +4,17 @@ const wordList = require('../../wordList.json');
 const lobbies = new Map();
 const tempModTimers = new Map();
 const TEMP_MOD_DELAY_MS = Number(process.env.TEMP_MOD_DELAY_MS || 5 * 60 * 1000);
+const MAX_ACTIVE_PLAYERS = 20;
+const MAX_INACTIVE_PLAYERS = 200;
+const seatIds = Array.from({ length: MAX_ACTIVE_PLAYERS }, (_, index) => `seat${index + 1}`);
+const palette = [
+  '#E6474E', '#F18E35', '#F5D74C', '#54B877', '#55BFDB',
+  '#164186', '#582C71', '#D564D8', '#71362E', '#333333',
+  '#B84A62', '#2F7D8C', '#9B7E2D', '#5B8C2F', '#8B5FBF',
+  '#C45A2C', '#2C5AC4', '#6A6A6A', '#A33FA3', '#3FA36B',
+];
 
-const seatColors = {
-  seat1: '#E6474E',
-  seat2: '#F18E35',
-  seat3: '#F5D74C',
-  seat4: '#54B877',
-  seat5: '#55BFDB',
-  seat6: '#164186',
-  seat7: '#582C71',
-  seat8: '#D564D8',
-  seat9: '#71362E',
-  seat10: '#333333',
-};
+const seatColors = Object.fromEntries(seatIds.map((seat, index) => [seat, palette[index]]));
 
 const activePlayer = (player) => player && !player.spectator && !player.observer;
 const onlineRealMod = (lobby) => Object.values(lobby.players).some(
@@ -114,22 +112,17 @@ class Lobby {
       minutes: 1,
       seconds: 0,
     };
+    this.mayorRoleEligibility = {
+      villager: true,
+      seer: false,
+      werewolf: false,
+    };
     this.timer = 1;
     this.pickCount = 2;
     this.gameState = 'lobby';
     this.players = {};
-    this.seats = {
-      seat1: null,
-      seat2: null,
-      seat3: null,
-      seat4: null,
-      seat5: null,
-      seat6: null,
-      seat7: null,
-      seat8: null,
-      seat9: null,
-      seat10: null,
-    };
+    this.seats = Object.fromEntries(seatIds.map((seat) => [seat, null]));
+
     this.words = [];
     this.chosenWord = '';
     this.messages = [];
@@ -180,6 +173,22 @@ const updateSaveTimer = (timer, lobby, requesterAuthId) => {
   return currLobby;
 };
 
+const updateMayorRoleSettings = (roles, lobby, requesterAuthId) => {
+  const currLobby = requireMod(lobby, requesterAuthId);
+  if (!currLobby) {
+    return null;
+  }
+  currLobby.mayorRoleEligibility = {
+    villager: Boolean(roles?.villager),
+    seer: Boolean(roles?.seer),
+    werewolf: Boolean(roles?.werewolf),
+  };
+  if (!Object.values(currLobby.mayorRoleEligibility).some(Boolean)) {
+    currLobby.mayorRoleEligibility.villager = true;
+  }
+  return currLobby;
+};
+
 const addLobby = (ownerId, name) => {
   const existingLobby = lobbies.get(name);
   if (existingLobby) {
@@ -211,7 +220,7 @@ const toggleJoin = (authId, lobby, seat, color) => {
     return null;
   }
   const player = currentLobby.players[authId];
-  if (player.observer) {
+  if (player.observer || !seatIds.includes(seat)) {
     return null;
   }
   if (currentLobby.seats[seat] && currentLobby.seats[seat].authId !== authId) {
@@ -230,7 +239,7 @@ const swapSeats = (authId, lobby, seat, color) => {
     return null;
   }
   const player = currentLobby.players[authId];
-  if (player.observer || (currentLobby.seats[seat] && currentLobby.seats[seat].authId !== authId)) {
+  if (player.observer || !seatIds.includes(seat) || (currentLobby.seats[seat] && currentLobby.seats[seat].authId !== authId)) {
     return null;
   }
   const prevSeat = player.seat;
@@ -345,7 +354,15 @@ const startGame = (lobbyName, requesterAuthId) => {
     roleIndex += 1;
   });
 
-  const mayor = lobby.players[playerKeys[Math.floor(Math.random() * playerKeys.length)]];
+  const mayorRoles = lobby.mayorRoleEligibility || { villager: true };
+  let eligibleMayors = playerKeys.filter((authId) => mayorRoles[lobby.players[authId].role]);
+  if (eligibleMayors.length === 0) {
+    eligibleMayors = playerKeys.filter((authId) => lobby.players[authId].role === 'villager');
+  }
+  if (eligibleMayors.length === 0) {
+    eligibleMayors = playerKeys;
+  }
+  const mayor = lobby.players[eligibleMayors[Math.floor(Math.random() * eligibleMayors.length)]];
   mayor.mayor = true;
   lobby.mayor = mayor;
 
@@ -573,6 +590,7 @@ module.exports = {
   resetGame,
   updateTimer,
   updateSaveTimer,
+  updateMayorRoleSettings,
   updatePickCount,
   answerQuestion,
   voteWerewolf,
@@ -581,6 +599,8 @@ module.exports = {
   demoteMod,
   resolveMigration,
   getMigrationId,
+  MAX_ACTIVE_PLAYERS,
+  MAX_INACTIVE_PLAYERS,
   touchModeration,
   canModerate,
 };

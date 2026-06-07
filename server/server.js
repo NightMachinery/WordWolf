@@ -8,8 +8,8 @@ const {
   lobbies, addLobby, getLobby, startGame, toggleJoin, swapSeats,
   toggleSpectate, setObserver, rejoinFromObserver, onMayorPick, onTimeout,
   afterVotingRound, resetGame, updateTimer, updateSaveTimer, updatePickCount,
-  answerQuestion, voteWerewolf, voteSeer, deleteLobby, promoteMod, demoteMod,
-  resolveMigration, getMigrationId,
+  updateMayorRoleSettings, answerQuestion, voteWerewolf, voteSeer, deleteLobby,
+  promoteMod, demoteMod, resolveMigration, getMigrationId, MAX_INACTIVE_PLAYERS,
 } = require('./dataObjects/lobby');
 const { players, assignPlayerToLobby, removePlayerFromLobby } = require('./dataObjects/player');
 const {
@@ -119,6 +119,10 @@ io.on('connect', (socket) => {
     await updatePickCount(pickCount, lobby, requesterAuthId);
     emitLobbyData(lobby);
   });
+  socket.on('updateMayorRoleSettings', async ({ roles, lobby, requesterAuthId }) => {
+    await updateMayorRoleSettings(roles, lobby, requesterAuthId);
+    emitLobbyData(lobby);
+  });
 
   socket.on('newMessage', async (data, lobby) => {
     addMessage(data, false);
@@ -191,8 +195,9 @@ nextApp.prepare()
         res.send('missing identity');
       } else if (!currentLobby) {
         res.send('lobby name not found');
-      } else if (!currentLobby.players[authId] && Object.keys(currentLobby.players).length === 10) {
-        res.send('lobby is full');
+      } else if (!currentLobby.players[authId] && Object.values(currentLobby.players)
+        .filter((player) => player.spectator || player.observer || !player.seat).length >= MAX_INACTIVE_PLAYERS) {
+        res.send('inactive room capacity is full');
       } else {
         res.send('ok');
       }

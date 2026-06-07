@@ -4,7 +4,7 @@ WordWolf is a self-hostable multiplayer browser word game for local networks and
 
 ## Features
 
-- Create generated rooms for up to 10 players/spectators, or join existing rooms from room links.
+- Create generated rooms for up to 20 active seated players plus 200 inactive spectators/observers, or join existing rooms from room links.
 - Local browser identity: a hidden random auth token is stored in localStorage with the one user-entered display name, so returning users are not repeatedly prompted for their name.
 - Duplicate display names are allowed; stable room-scoped numbers are appended automatically as needed.
 - Device migration links let a player use the same room identity on another device without exposing their real auth token.

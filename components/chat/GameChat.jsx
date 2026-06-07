@@ -7,9 +7,18 @@ import { StoreContext } from '../../pages/api/contextStore';
 import { socket } from '../../pages/api/service/socket';
 import Message from './Message';
 
+function ChatIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M4 4h16v11H7.8L4 18.8V4Zm2 2v8l1-1h11V6H6Zm3 3h6v2H9V9Z" />
+    </svg>
+  );
+}
+
 function GameChat({ players, username }) {
   const [message, setMessage] = useState('');
   const [allMessages, setAllMessages] = useState([]);
+  const [open, setOpen] = useState(false);
   const { lobby } = useContext(StoreContext);
   // get the message whenever there is new message sent
   useEffect(() => {
@@ -40,11 +49,30 @@ function GameChat({ players, username }) {
     setMessage('');
   };
 
+  if (!open) {
+    return (
+      <Button
+        aria-label="Open chat"
+        title="Open chat"
+        width="48px"
+        height="48px"
+        minWidth="48px"
+        borderRadius="full"
+        backgroundColor="#D19E61"
+        color="black"
+        onClick={() => setOpen(true)}
+      >
+        <ChatIcon />
+      </Button>
+    );
+  }
+
   return (
     <div style={{
       width: '542px', height: '181px', backgroundColor: 'white',
     }}
     >
+      <Button aria-label="Close chat" title="Close chat" size="xs" onClick={() => setOpen(false)}>×</Button>
       <ReactScrollableFeed>
         {allMessages?.map((msg) => <Message key={msg.id} message={msg} players={players} />)}
       </ReactScrollableFeed>
@@ -63,7 +91,7 @@ function GameChat({ players, username }) {
             onChange={(e) => handleMessageOnChange(e.target.value)}
           />
 
-          {(lobby.mayor?.name === username || lobby.gameState !== 'questionRound') ? '' : (
+          {(lobby.mayor?.authId === username || lobby.gameState !== 'questionRound') ? '' : (
             <Button
               style={{
                 backgroundColor: '#D19E61', color: 'black', width: '97px', height: '46px', marginRight: '10px', borderRadius: '0px',

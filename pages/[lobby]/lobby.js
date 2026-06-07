@@ -169,6 +169,10 @@ function Container() {
     socket.emit('updatePickCount', { pickCount, lobby: lobby.name, requesterAuthId });
   };
 
+  const updateMayorRoleSettings = (roles) => {
+    socket.emit('updateMayorRoleSettings', { roles, lobby: lobby.name, requesterAuthId });
+  };
+
   const display = () => {
     const gameArray = [
       'mayorPick',
@@ -199,6 +203,7 @@ function Container() {
               updateTimer={updateTimer}
               updateSaveTimer={updateSaveTimer}
               updatePickCount={updatePickCount}
+              updateMayorRoleSettings={updateMayorRoleSettings}
             />
           </div>
         );

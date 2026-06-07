@@ -1,19 +1,25 @@
-import { Box, HStack } from '@chakra-ui/react';
-
-const seats = [
-  [{ id: 'seat1', color: '#E6474E', text: '#333', top: '-10', left: '175' }, { id: 'seat6', color: '#164186', text: '#fff', top: '-10', left: '340' }, { id: 'seat2', color: '#F18E35', text: '#333', top: '-10', left: '500' }],
-  [{ id: 'seat10', color: '#333333', text: '#fff', top: '5', left: '-2' }, { id: 'seat8', color: '#D564D8', text: '#333', top: '5', left: '740' }],
-  [{ id: 'seat7', color: '#582C71', text: '#fff', top: '170', left: '-2' }, { id: 'seat9', color: '#71362E', text: '#fff', top: '170', left: '740' }],
-  [{ id: 'seat3', color: '#F5D74C', text: '#333', top: '220', left: '175' }, { id: 'seat5', color: '#55BFDB', text: '#333', top: '220', left: '340' }, { id: 'seat4', color: '#54B877', text: '#333', top: '220', left: '500' }],
-];
+import { Box } from '@chakra-ui/react';
+import { seats } from './seatConfig';
 
 function initials(player) {
   return (player?.displayName || player?.name || '').substring(0, 2).toUpperCase();
 }
 
-function Seat({ seat, lobby, loginData, toggleJoin }) {
+function seatStyle(index) {
+  const count = seats.length;
+  const angle = (-Math.PI / 2) + ((2 * Math.PI * index) / count);
+  const rx = 410;
+  const ry = 225;
+  return {
+    left: `${450 + (rx * Math.cos(angle)) - 35}px`,
+    top: `${242 + (ry * Math.sin(angle)) - 35}px`,
+  };
+}
+
+function Seat({ seat, index, lobby, loginData, toggleJoin }) {
   const player = lobby.seats[seat.id];
   const self = player?.authId === loginData?.authId;
+  const pos = seatStyle(index);
   return (
     <Box
       name={seat.id}
@@ -28,9 +34,9 @@ function Seat({ seat, lobby, loginData, toggleJoin }) {
       outline={player?.observer ? '4px dashed #fff' : undefined}
       color={seat.text}
       fontWeight="600"
-      pos="relative"
-      top={seat.top}
-      left={seat.left}
+      position="absolute"
+      left={pos.left}
+      top={pos.top}
       fontSize="24px"
       title={player?.observer ? `${player.displayName} is an observer; seat is reserved` : player?.displayName}
       onClick={(e) => toggleJoin(e)}
@@ -43,10 +49,8 @@ function Seat({ seat, lobby, loginData, toggleJoin }) {
 function LobbyTable({ toggleJoin, lobby, loginData }) {
   return (
     <Box className="lobby-table" w="900px" h="485px" background="#3A4171" borderWidth="10px" borderColor="#D19E61" borderRadius="full" bgGradient="linear(to-r, #3A4171, #2d3664)" marginRight="200px" justify="center" pos="fixed">
-      {seats.map((row) => (
-        <HStack key={row.map((seat) => seat.id).join('-')}>
-          {row.map((seat) => <Seat key={seat.id} seat={seat} lobby={lobby} loginData={loginData} toggleJoin={toggleJoin} />)}
-        </HStack>
+      {seats.map((seat, index) => (
+        <Seat key={seat.id} index={index} seat={seat} lobby={lobby} loginData={loginData} toggleJoin={toggleJoin} />
       ))}
     </Box>
   );

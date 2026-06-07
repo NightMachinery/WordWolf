@@ -13,10 +13,13 @@ import ModerationControls from './ModerationControls';
 
 function Lobby({
   lobby, toggleJoin, onGameStart, loginData, toggleSpectate, rejoinSelf,
-  updateTimer, updatePickCount, updateSaveTimer,
+  updateTimer, updatePickCount, updateSaveTimer, updateMayorRoleSettings,
 }) {
   const me = lobby?.players?.[loginData.authId];
   const canModerate = me?.canModerate;
+  const spectatorIds = Object.keys(lobby?.players || {}).filter((authId) => lobby.players[authId].spectator);
+  const playerIds = Object.keys(lobby?.players || {}).filter((authId) => !lobby.players[authId].spectator);
+
   return (
     <div className="background">
       <HStack
@@ -27,9 +30,23 @@ function Lobby({
       >
         <Timer lobby={lobby} />
         <Image src={GameLogo} />
-        <Rules />
+        <Box w="200px" />
       </HStack>
-      <Box className="chat" style={{ transform: 'scale(0.9)', marginRight: '90px' }}>
+      <Box className="lobby-top-actions">
+        <Rules />
+        {canModerate
+          ? (
+            <Settings
+              updateTimer={updateTimer}
+              updateSaveTimer={updateSaveTimer}
+              lobby={lobby}
+              updatePickCount={updatePickCount}
+              updateMayorRoleSettings={updateMayorRoleSettings}
+            />
+          )
+          : null}
+      </Box>
+      <Box className="chat">
         <Chat players={lobby.players} username={loginData.authId} lobby={loginData.lobby || lobby.name} />
       </Box>
       <Box style={typeof window !== 'undefined' && window.innerWidth > 1500 ? { marginTop: '12vh' } : { marginTop: '6vh' }}>
@@ -37,7 +54,7 @@ function Lobby({
       </Box>
       {me?.observer ? (
         <Box position="fixed" bottom="120px" right="20px" bg="#fff" color="#000" padding="10px" maxW="340px">
-          You are an observer: your table seat is reserved, but you are inactive until joined back.
+          You are an observer.
           <Button size="sm" marginLeft="8px" onClick={rejoinSelf}>Join back</Button>
         </Box>
       ) : null}
@@ -51,45 +68,30 @@ function Lobby({
           ) : null}
       </Box>
       <Box className="spectators-list">
-        <h1>Spectators</h1>
-        <Box fontSize="12px" maxW="260px" lineHeight="1.2" marginBottom="8px">
-          Spectators have no reserved seat. Observers keep a reserved seat but are inactive.
+        <Box>
+          <h1>Players</h1>
+          <UnorderedList>
+            {playerIds.map((authId) => (
+              <ListItem key={authId} style={{ listStyle: 'none', marginLeft: '-15px' }}>
+                <PlayerName player={lobby.players[authId]} loginData={loginData} />
+                {' '}
+                <ModerationControls lobby={lobby} loginData={loginData} targetAuthId={authId} compact />
+              </ListItem>
+            ))}
+          </UnorderedList>
         </Box>
-        <UnorderedList>
-          {lobby
-            ? Object.keys(lobby?.players).map((authId) => (!lobby.players[authId].spectator
-              ? null
-              : (
-                <ListItem key={authId} style={{ listStyle: 'none', marginLeft: '-15px' }}>
-                  <PlayerName player={lobby.players[authId]} loginData={loginData} />
-                  {' '}
-                  <ModerationControls lobby={lobby} loginData={loginData} targetAuthId={authId} compact />
-                </ListItem>
-              )))
-            : null}
-        </UnorderedList>
-        <h1 style={{ marginTop: '12px' }}>Players</h1>
-        <UnorderedList>
-          {Object.keys(lobby?.players || {}).map((authId) => (lobby.players[authId].spectator ? null : (
-            <ListItem key={authId} style={{ listStyle: 'none', marginLeft: '-15px' }}>
-              <PlayerName player={lobby.players[authId]} loginData={loginData} />
-              {' '}
-              <ModerationControls lobby={lobby} loginData={loginData} targetAuthId={authId} compact />
-            </ListItem>
-          )))}
-        </UnorderedList>
-      </Box>
-      <Box className="settings">
-        {canModerate
-          ? (
-            <Settings
-              updateTimer={updateTimer}
-              updateSaveTimer={updateSaveTimer}
-              lobby={lobby}
-              updatePickCount={updatePickCount}
-            />
-          )
-          : null}
+        <Box>
+          <h1>Spectators</h1>
+          <UnorderedList>
+            {spectatorIds.map((authId) => (
+              <ListItem key={authId} style={{ listStyle: 'none', marginLeft: '-15px' }}>
+                <PlayerName player={lobby.players[authId]} loginData={loginData} />
+                {' '}
+                <ModerationControls lobby={lobby} loginData={loginData} targetAuthId={authId} compact />
+              </ListItem>
+            ))}
+          </UnorderedList>
+        </Box>
       </Box>
     </div>
   );

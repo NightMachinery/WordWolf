@@ -1,4 +1,6 @@
-const { lobbies, deleteLobby, touchModeration } = require('./lobby');
+const {
+  lobbies, deleteLobby, touchModeration, MAX_INACTIVE_PLAYERS,
+} = require('./lobby');
 const { deleteLobbyMessages, deleteGameMessages } = require('./chat');
 
 const players = new Map(); // socket.id -> { authId, lobby }
@@ -57,8 +59,10 @@ const assignPlayerToLobby = (baseName, lobby, socketId, authId) => {
   }
 
   const existingPlayer = currentLobby.players[authId];
-  if (!existingPlayer && Object.keys(currentLobby.players).length === 10) {
-    return { error: 'Lobby is full' };
+  const inactiveCount = Object.values(currentLobby.players)
+    .filter((player) => player.spectator || player.observer || !player.seat).length;
+  if (!existingPlayer && inactiveCount >= MAX_INACTIVE_PLAYERS) {
+    return { error: 'Inactive room capacity is full' };
   }
 
   const assignment = nextDisplayName(currentLobby, authId, baseName);
