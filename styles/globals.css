@@ -5,7 +5,7 @@
   background-image: url("/Background.svg");
   background-size: cover;
   width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
 }
 
 .game-background {
@@ -52,10 +52,13 @@ text-align: center;
 }
 
 .lobby-btn {
-  position: fixed;
-  bottom: 12px;
-  right: 20px;
+  position: absolute;
+  top: 640px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(900px, 92vw);
   display: flex;
+  justify-content: flex-end;
   gap: 10px;
   z-index: 1300;
 }
@@ -98,11 +101,11 @@ text-align: center;
 
 .spectators-list {
   position: absolute;
-  top: 640px;
+  top: 710px;
   left: 50%;
   transform: translateX(-50%);
   width: min(900px, 92vw);
-  max-height: calc(100vh - 735px);
+  max-height: min(280px, 32vh);
   overflow: auto;
   color: #fff;
   background: rgba(33, 30, 50, 0.86);
@@ -111,6 +114,7 @@ text-align: center;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+  z-index: 900;
 }
 
 .spectators-list ul {
@@ -148,18 +152,22 @@ text-align: center;
 }
 
 @media (max-width: 900px) {
-  .spectators-list {
+  .lobby-btn {
     top: 610px;
-    bottom: 88px;
-    max-height: none;
+    left: 50%;
+    right: auto;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .spectators-list {
+    top: 735px;
+    max-height: min(300px, 34vh);
     grid-template-columns: 1fr;
   }
 
-  .lobby-btn {
-    left: 12px;
-    right: 12px;
-    justify-content: flex-end;
-    flex-wrap: wrap;
+  .spectators-list ul {
+    columns: 1;
   }
 }
 
