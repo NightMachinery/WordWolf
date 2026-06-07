@@ -112,6 +112,14 @@ function Container() {
     }
   };
 
+  const joinFirstSeat = (e) => {
+    e.preventDefault();
+    socket.emit('toggleJoin', {
+      authId: loginData.authId,
+      lobby: lobby.name,
+    });
+  };
+
   const toggleSpectate = (e) => {
     e.preventDefault();
     if (!me?.spectator) {
@@ -197,6 +205,7 @@ function Container() {
               lobby={lobby}
               toggleJoin={toggleJoin}
               toggleSpectate={toggleSpectate}
+              joinFirstSeat={joinFirstSeat}
               rejoinSelf={rejoinSelf}
               onGameStart={onGameStart}
               loginData={loginData}

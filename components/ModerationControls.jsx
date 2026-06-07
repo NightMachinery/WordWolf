@@ -57,7 +57,7 @@ function ModerationControls({ lobby, loginData, targetAuthId, compact = false })
   return (
     <Box display="inline-flex" gap="4px" flexWrap="wrap" alignItems="center">
       {canCopy ? (
-        <Button size={buttonSize} padding={compact ? '0 6px' : undefined} title="Copy migrate device link" onClick={copyMigrationLink}>
+        <Button className="theme-icon-button" size={buttonSize} padding={compact ? '0 6px' : undefined} title="Copy migrate device link" onClick={copyMigrationLink}>
           {compact ? <MigrationIcon /> : 'Migrate link'}
         </Button>
       ) : null}

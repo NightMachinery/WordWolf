@@ -4,9 +4,9 @@ import {
 import Tokens from './Tokens';
 import { seats } from './seatConfig';
 
-function seatStyle(index) {
-  const count = seats.length;
-  const angle = (-Math.PI / 2) + ((2 * Math.PI * index) / count);
+function seatStyle(index, count) {
+  const safeCount = Math.max(count, 1);
+  const angle = (-Math.PI / 2) + ((2 * Math.PI * index) / safeCount);
   const rx = 410;
   const ry = 225;
   return {
@@ -15,9 +15,9 @@ function seatStyle(index) {
   };
 }
 
-function tokenStyle(index) {
-  const count = seats.length;
-  const angle = (-Math.PI / 2) + ((2 * Math.PI * index) / count);
+function tokenStyle(index, count) {
+  const safeCount = Math.max(count, 1);
+  const angle = (-Math.PI / 2) + ((2 * Math.PI * index) / safeCount);
   const rx = 330;
   const ry = 165;
   return {
@@ -26,12 +26,12 @@ function tokenStyle(index) {
   };
 }
 
-function SeatButton({ seat, index, player, loginData }) {
+function SeatButton({ seat, index, count, player, loginData }) {
   if (!player) {
     return null;
   }
   const self = player.authId === loginData.authId;
-  const pos = seatStyle(index);
+  const pos = seatStyle(index, count);
   return (
     <Box
       name={seat.id}
@@ -89,6 +89,8 @@ function GameTable({ tokenSetter, lobby, loginData }) {
     currentPlay = 'Game Over!';
   }
 
+  const visibleSeats = seats.filter((seat) => lobby.seats[seat.id]);
+
   return (
     <Box
       w="900px"
@@ -102,12 +104,12 @@ function GameTable({ tokenSetter, lobby, loginData }) {
       justify="center"
       position="relative"
     >
-      {seats.map((seat, index) => {
+      {visibleSeats.map((seat, index) => {
         const player = lobby.seats[seat.id];
-        const tpos = tokenStyle(index);
+        const tpos = tokenStyle(index, visibleSeats.length);
         return (
           <Box key={seat.id}>
-            <SeatButton seat={seat} index={index} player={player} loginData={loginData} />
+            <SeatButton seat={seat} index={index} count={visibleSeats.length} player={player} loginData={loginData} />
             {player ? (
               <Box position="absolute" left={tpos.left} top={tpos.top} zIndex="999">
                 <Tokens tokenSetter={tokenSetter} lobby={lobby} seat={seat.id} />

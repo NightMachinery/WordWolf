@@ -17,6 +17,28 @@ const palette = [
 const seatColors = Object.fromEntries(seatIds.map((seat, index) => [seat, palette[index]]));
 
 const activePlayer = (player) => player && !player.spectator && !player.observer;
+const activePlayerCount = (lobby) => Object.values(lobby.players).filter(activePlayer).length;
+const firstFreeSeat = (lobby) => seatIds.find((seat) => !lobby.seats[seat]);
+const seatPlayer = (lobby, player, seat, color) => {
+  if (!seat || !seatIds.includes(seat) || (lobby.seats[seat] && lobby.seats[seat].authId !== player.authId)) {
+    return false;
+  }
+  if (player.seat && player.seat !== seat) {
+    lobby.seats[player.seat] = null;
+  }
+  player.spectator = false;
+  player.observer = false;
+  player.seat = seat;
+  player.color = color || seatColors[seat];
+  lobby.seats[seat] = player;
+  return true;
+};
+const autoSeatPlayer = (lobby, player) => {
+  if (!lobby || !player || lobby.gameState !== 'lobby' || player.seat || activePlayerCount(lobby) >= MAX_ACTIVE_PLAYERS) {
+    return false;
+  }
+  return seatPlayer(lobby, player, firstFreeSeat(lobby));
+};
 const onlineRealMod = (lobby) => Object.values(lobby.players).some(
   (player) => player.online && (player.authId === lobby.ownerId || lobby.mods[player.authId]),
 );
@@ -220,19 +242,16 @@ const toggleJoin = (authId, lobby, seat, color) => {
     return null;
   }
   const player = currentLobby.players[authId];
-  if (player.observer || !seatIds.includes(seat)) {
+  if (player.observer) {
     return null;
   }
-  if (currentLobby.seats[seat] && currentLobby.seats[seat].authId !== authId) {
+  const targetSeat = seat || firstFreeSeat(currentLobby);
+  if (!targetSeat || (!player.seat && activePlayerCount(currentLobby) >= MAX_ACTIVE_PLAYERS)) {
     return null;
   }
-  player.spectator = false;
-  player.seat = seat;
-  player.color = color || seatColors[seat];
-  currentLobby.seats[seat] = player;
+  seatPlayer(currentLobby, player, targetSeat, color);
   return currentLobby;
 };
-
 const swapSeats = (authId, lobby, seat, color) => {
   const currentLobby = lobbies.get(lobby);
   if (!currentLobby || !currentLobby.players[authId]) {
@@ -582,6 +601,7 @@ module.exports = {
   toggleJoin,
   swapSeats,
   toggleSpectate,
+  autoSeatPlayer,
   setObserver,
   rejoinFromObserver,
   onMayorPick,

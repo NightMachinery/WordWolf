@@ -53,10 +53,16 @@ text-align: center;
 
 .lobby-btn {
   position: fixed;
-  bottom: 0;
-  right: 0;
-  margin-right: 20px;
-  margin-bottom: 20px;
+  bottom: 12px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+  z-index: 1300;
+}
+
+.lobby-btn button {
+  min-width: 120px;
+  height: 56px;
 }
 
 .lobby-table {
@@ -92,11 +98,11 @@ text-align: center;
 
 .spectators-list {
   position: absolute;
-  top: 645px;
+  top: 640px;
   left: 50%;
   transform: translateX(-50%);
   width: min(900px, 92vw);
-  max-height: 28vh;
+  max-height: calc(100vh - 735px);
   overflow: auto;
   color: #fff;
   background: rgba(33, 30, 50, 0.86);
@@ -139,4 +145,32 @@ text-align: center;
   border-radius: 4px;
   padding: 0 4px;
   font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .spectators-list {
+    top: 610px;
+    bottom: 88px;
+    max-height: none;
+    grid-template-columns: 1fr;
+  }
+
+  .lobby-btn {
+    left: 12px;
+    right: 12px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+}
+
+.theme-icon-button {
+  background: #211E32 !important;
+  color: #D19E61 !important;
+  border: 1px solid #D19E61 !important;
+}
+
+.theme-icon-button:hover,
+.theme-icon-button:focus {
+  background: #3A4171 !important;
+  color: #FFF !important;
 }

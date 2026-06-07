@@ -5,9 +5,9 @@ function initials(player) {
   return (player?.displayName || player?.name || '').substring(0, 2).toUpperCase();
 }
 
-function seatStyle(index) {
-  const count = seats.length;
-  const angle = (-Math.PI / 2) + ((2 * Math.PI * index) / count);
+function seatStyle(index, count) {
+  const safeCount = Math.max(count, 1);
+  const angle = (-Math.PI / 2) + ((2 * Math.PI * index) / safeCount);
   const rx = 410;
   const ry = 225;
   return {
@@ -16,10 +16,13 @@ function seatStyle(index) {
   };
 }
 
-function Seat({ seat, index, lobby, loginData, toggleJoin }) {
+function Seat({ seat, index, count, lobby, loginData, toggleJoin }) {
   const player = lobby.seats[seat.id];
+  if (!player) {
+    return null;
+  }
   const self = player?.authId === loginData?.authId;
-  const pos = seatStyle(index);
+  const pos = seatStyle(index, count);
   return (
     <Box
       name={seat.id}
@@ -28,7 +31,7 @@ function Seat({ seat, index, lobby, loginData, toggleJoin }) {
       w="70px"
       h="70px"
       borderRadius="full"
-      background={player ? seat.color : '#C4C4C4'}
+      background={seat.color}
       borderWidth={self ? '8px' : '5px'}
       borderColor={self ? '#FFFFFF' : seat.color}
       outline={player?.observer ? '4px dashed #fff' : undefined}
@@ -47,10 +50,11 @@ function Seat({ seat, index, lobby, loginData, toggleJoin }) {
 }
 
 function LobbyTable({ toggleJoin, lobby, loginData }) {
+  const visibleSeats = seats.filter((seat) => lobby.seats[seat.id]);
   return (
     <Box className="lobby-table" w="900px" h="485px" background="#3A4171" borderWidth="10px" borderColor="#D19E61" borderRadius="full" bgGradient="linear(to-r, #3A4171, #2d3664)" marginRight="200px" justify="center" pos="fixed">
-      {seats.map((seat, index) => (
-        <Seat key={seat.id} index={index} seat={seat} lobby={lobby} loginData={loginData} toggleJoin={toggleJoin} />
+      {visibleSeats.map((seat, index) => (
+        <Seat key={seat.id} index={index} count={visibleSeats.length} seat={seat} lobby={lobby} loginData={loginData} toggleJoin={toggleJoin} />
       ))}
     </Box>
   );

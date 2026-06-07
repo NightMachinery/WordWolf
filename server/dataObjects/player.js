@@ -1,5 +1,5 @@
 const {
-  lobbies, deleteLobby, touchModeration, MAX_INACTIVE_PLAYERS,
+  lobbies, deleteLobby, touchModeration, autoSeatPlayer, MAX_INACTIVE_PLAYERS,
 } = require('./lobby');
 const { deleteLobbyMessages, deleteGameMessages } = require('./chat');
 
@@ -91,6 +91,8 @@ const assignPlayerToLobby = (baseName, lobby, socketId, authId) => {
     currentLobby.migrationByAuth[authId] = token;
     currentLobby.authByMigration[token] = authId;
   }
+
+  autoSeatPlayer(currentLobby, player);
 
   players.set(socketId, { authId, lobby });
   touchModeration(lobby);

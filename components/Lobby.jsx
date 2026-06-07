@@ -12,7 +12,7 @@ import PlayerName from './PlayerName';
 import ModerationControls from './ModerationControls';
 
 function Lobby({
-  lobby, toggleJoin, onGameStart, loginData, toggleSpectate, rejoinSelf,
+  lobby, toggleJoin, onGameStart, loginData, toggleSpectate, joinFirstSeat, rejoinSelf,
   updateTimer, updatePickCount, updateSaveTimer, updateMayorRoleSettings,
 }) {
   const me = lobby?.players?.[loginData.authId];
@@ -59,10 +59,11 @@ function Lobby({
         </Box>
       ) : null}
       <Box className="lobby-btn">
-        {me?.spectator || me?.observer ? null : <Button onClick={(e) => toggleSpectate(e)} width="11vw" height="9vh" bg="#D19E61" fontSize="32px" borderRadius="0px">Spectate</Button>}
+        {me?.spectator && !me?.observer ? <Button onClick={(e) => joinFirstSeat(e)} bg="#D19E61" fontSize="24px" borderRadius="0px">Join table</Button> : null}
+        {!me?.spectator && !me?.observer ? <Button onClick={(e) => toggleSpectate(e)} bg="#D19E61" fontSize="24px" borderRadius="0px">Spectate</Button> : null}
         {canModerate
           ? (
-            <Button width="11vw" height="9vh" onClick={(e) => onGameStart(e)} bg="#D19E61" fontSize="32px" borderRadius="0px">
+            <Button onClick={(e) => onGameStart(e)} bg="#D19E61" fontSize="24px" borderRadius="0px">
               Start
             </Button>
           ) : null}
