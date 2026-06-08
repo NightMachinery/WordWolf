@@ -174,10 +174,12 @@ function Container() {
   };
 
   const onGameStart = () => {
-    const joinedCount = Object.keys(lobby.players).reduce(
-      (prev, player) => (!lobby.players[player].spectator && !lobby.players[player].observer ? prev + 1 : prev),
-      0,
-    );
+    const joinedCount = Object.keys(lobby.players).reduce((prev, player) => {
+      const currentPlayer = lobby.players[player];
+      return currentPlayer.online && !currentPlayer.spectator && !currentPlayer.observer
+        ? prev + 1
+        : prev;
+    }, 0);
 
     if (joinedCount < 4) {
       alert('unable to start with less than 4 active players joined');

@@ -26,12 +26,21 @@ function tokenStyle(index, count) {
   };
 }
 
-function SeatButton({ seat, index, count, player, loginData }) {
+function SeatButton({
+  seat, index, count, player, loginData,
+}) {
   if (!player) {
     return null;
   }
   const self = player.authId === loginData.authId;
   const pos = seatStyle(index, count);
+  const title = player.online === false
+    ? `${player.displayName} is offline; seat is reserved`
+    : player.displayName;
+  const seatTitle = player.observer
+    ? `${player.displayName} is an observer; seat is reserved`
+    : title;
+
   return (
     <Box
       name={seat.id}
@@ -44,13 +53,14 @@ function SeatButton({ seat, index, count, player, loginData }) {
       borderWidth={self ? '8px' : '5px'}
       borderColor={self ? '#FFFFFF' : seat.color}
       outline={player.observer ? '4px dashed #fff' : undefined}
+      opacity={player.online === false ? 0.45 : 1}
       color={seat.text}
       fontWeight="600"
       position="absolute"
       left={pos.left}
       top={pos.top}
       zIndex="999"
-      title={player.observer ? `${player.displayName} is an observer; seat is reserved` : player.displayName}
+      title={seatTitle}
     >
       {(player.displayName || player.name || '').substring(0, 2).toUpperCase()}
     </Box>

@@ -16,13 +16,22 @@ function seatStyle(index, count) {
   };
 }
 
-function Seat({ seat, index, count, lobby, loginData, toggleJoin }) {
+function Seat({
+  seat, index, count, lobby, loginData, toggleJoin,
+}) {
   const player = lobby.seats[seat.id];
   if (!player) {
     return null;
   }
   const self = player?.authId === loginData?.authId;
   const pos = seatStyle(index, count);
+  const title = player?.online === false
+    ? `${player.displayName} is offline; seat is reserved`
+    : player?.displayName;
+  const seatTitle = player?.observer
+    ? `${player.displayName} is an observer; seat is reserved`
+    : title;
+
   return (
     <Box
       name={seat.id}
@@ -35,13 +44,14 @@ function Seat({ seat, index, count, lobby, loginData, toggleJoin }) {
       borderWidth={self ? '8px' : '5px'}
       borderColor={self ? '#FFFFFF' : seat.color}
       outline={player?.observer ? '4px dashed #fff' : undefined}
+      opacity={player?.online === false ? 0.45 : 1}
       color={seat.text}
       fontWeight="600"
       position="absolute"
       left={pos.left}
       top={pos.top}
       fontSize="24px"
-      title={player?.observer ? `${player.displayName} is an observer; seat is reserved` : player?.displayName}
+      title={seatTitle}
       onClick={(e) => toggleJoin(e)}
     >
       {initials(player)}
@@ -52,9 +62,29 @@ function Seat({ seat, index, count, lobby, loginData, toggleJoin }) {
 function LobbyTable({ toggleJoin, lobby, loginData }) {
   const visibleSeats = seats.filter((seat) => lobby.seats[seat.id]);
   return (
-    <Box className="lobby-table" w="900px" h="485px" background="#3A4171" borderWidth="10px" borderColor="#D19E61" borderRadius="full" bgGradient="linear(to-r, #3A4171, #2d3664)" marginRight="200px" justify="center" pos="fixed">
+    <Box
+      className="lobby-table"
+      w="900px"
+      h="485px"
+      background="#3A4171"
+      borderWidth="10px"
+      borderColor="#D19E61"
+      borderRadius="full"
+      bgGradient="linear(to-r, #3A4171, #2d3664)"
+      marginRight="200px"
+      justify="center"
+      pos="fixed"
+    >
       {visibleSeats.map((seat, index) => (
-        <Seat key={seat.id} index={index} count={visibleSeats.length} seat={seat} lobby={lobby} loginData={loginData} toggleJoin={toggleJoin} />
+        <Seat
+          key={seat.id}
+          index={index}
+          count={visibleSeats.length}
+          seat={seat}
+          lobby={lobby}
+          loginData={loginData}
+          toggleJoin={toggleJoin}
+        />
       ))}
     </Box>
   );

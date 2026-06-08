@@ -1,5 +1,8 @@
 import axios from 'axios';
 import { Button, Box } from '@chakra-ui/react';
+import {
+  FaArrowDown, FaArrowUp, FaEye, FaLink, FaUserPlus, FaUsers,
+} from 'react-icons/fa';
 import { socket } from '../pages/api/service/socket';
 
 const copyText = async (text) => {
@@ -18,15 +21,29 @@ const copyText = async (text) => {
   document.body.removeChild(textarea);
 };
 
-function MigrationIcon() {
+function ActionButton({
+  compact, label, onClick, children,
+}) {
+  const iconOnlyProps = compact ? {
+    className: 'theme-icon-button moderation-icon-button',
+    'aria-label': label,
+    title: label,
+    minW: '24px',
+    w: '24px',
+    h: '24px',
+    padding: '0',
+  } : {};
+
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="currentColor" d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3ZM5 5h6v2H7v10h10v-4h2v6H5V5Z" />
-    </svg>
+    <Button size={compact ? 'xs' : 'sm'} onClick={onClick} {...iconOnlyProps}>
+      {children}
+    </Button>
   );
 }
 
-function ModerationControls({ lobby, loginData, targetAuthId, compact = false }) {
+function ModerationControls({
+  lobby, loginData, targetAuthId, compact = false,
+}) {
   const me = lobby?.players?.[loginData.authId];
   const target = lobby?.players?.[targetAuthId];
   if (!target || !me) {
@@ -37,7 +54,8 @@ function ModerationControls({ lobby, loginData, targetAuthId, compact = false })
   const canModerateTarget = me.canModerate && targetAuthId !== requesterAuthId;
   const canCopy = targetAuthId === requesterAuthId || me.canModerate;
   const canDemote = target.isMod || target.isTempMod;
-  const buttonSize = compact ? 'xs' : 'sm';
+  const canForceJoin = canModerateTarget
+    && (target.spectator || target.observer || !target.seat);
 
   const emit = (event, payload = {}) => socket.emit(event, {
     ...payload,
@@ -47,7 +65,10 @@ function ModerationControls({ lobby, loginData, targetAuthId, compact = false })
   });
 
   const copyMigrationLink = async () => {
-    const res = await axios.get(`/migration/${lobby.name}/${targetAuthId}`, { params: { requesterAuthId } });
+    const res = await axios.get(
+      `/migration/${lobby.name}/${targetAuthId}`,
+      { params: { requesterAuthId } },
+    );
     const url = new URL(`/${lobby.name}/lobby`, window.location.origin);
     url.searchParams.set('migrate', res.data.migrationId);
     await copyText(url.toString());
@@ -57,21 +78,58 @@ function ModerationControls({ lobby, loginData, targetAuthId, compact = false })
   return (
     <Box display="inline-flex" gap="4px" flexWrap="wrap" alignItems="center">
       {canCopy ? (
-        <Button className="theme-icon-button" size={buttonSize} padding={compact ? '0 6px' : undefined} title="Copy migrate device link" onClick={copyMigrationLink}>
-          {compact ? <MigrationIcon /> : 'Migrate link'}
-        </Button>
+        <ActionButton
+          compact={compact}
+          label="Copy migrate device link"
+          onClick={copyMigrationLink}
+        >
+          {compact ? <FaLink aria-hidden="true" /> : 'Migrate link'}
+        </ActionButton>
       ) : null}
       {canModerateTarget && !target.isMod && !target.isOwner ? (
-        <Button size={buttonSize} onClick={() => emit('promoteMod')}>Promote</Button>
+        <ActionButton
+          compact={compact}
+          label="Promote to moderator"
+          onClick={() => emit('promoteMod')}
+        >
+          {compact ? <FaArrowUp aria-hidden="true" /> : 'Promote'}
+        </ActionButton>
       ) : null}
       {canModerateTarget && canDemote && !target.isOwner ? (
-        <Button size={buttonSize} onClick={() => emit('demoteMod')}>Demote</Button>
+        <ActionButton
+          compact={compact}
+          label="Demote moderator"
+          onClick={() => emit('demoteMod')}
+        >
+          {compact ? <FaArrowDown aria-hidden="true" /> : 'Demote'}
+        </ActionButton>
+      ) : null}
+      {canForceJoin ? (
+        <ActionButton
+          compact={compact}
+          label="Force join table"
+          onClick={() => emit('forceJoin')}
+        >
+          {compact ? <FaUserPlus aria-hidden="true" /> : 'Force join'}
+        </ActionButton>
       ) : null}
       {canModerateTarget && target.seat && !target.observer ? (
-        <Button size={buttonSize} onClick={() => emit('setObserver', { observer: true })}>Observe</Button>
+        <ActionButton
+          compact={compact}
+          label="Make observer"
+          onClick={() => emit('setObserver', { observer: true })}
+        >
+          {compact ? <FaEye aria-hidden="true" /> : 'Observe'}
+        </ActionButton>
       ) : null}
       {((canModerateTarget && target.observer) || (targetAuthId === requesterAuthId && target.observer)) ? (
-        <Button size={buttonSize} onClick={() => emit('rejoinFromObserver')}>Join back</Button>
+        <ActionButton
+          compact={compact}
+          label="Join back from observer"
+          onClick={() => emit('rejoinFromObserver')}
+        >
+          {compact ? <FaUsers aria-hidden="true" /> : 'Join back'}
+        </ActionButton>
       ) : null}
     </Box>
   );

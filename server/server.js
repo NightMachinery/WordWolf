@@ -6,7 +6,7 @@ const io = require('socket.io')(server);
 const next = require('next');
 const {
   lobbies, addLobby, getLobby, startGame, toggleJoin, swapSeats,
-  toggleSpectate, setObserver, rejoinFromObserver, onMayorPick, onTimeout,
+  toggleSpectate, setObserver, rejoinFromObserver, forceJoin, onMayorPick, onTimeout,
   afterVotingRound, resetGame, updateTimer, updateSaveTimer, updatePickCount,
   updateMayorRoleSettings, answerQuestion, voteWerewolf, voteSeer, deleteLobby,
   promoteMod, demoteMod, resolveMigration, getMigrationId, MAX_INACTIVE_PLAYERS,
@@ -76,6 +76,10 @@ io.on('connect', (socket) => {
   });
   socket.on('rejoinFromObserver', async ({ targetAuthId, lobby, requesterAuthId }) => {
     await rejoinFromObserver(lobby, targetAuthId, requesterAuthId);
+    emitLobbyData(lobby);
+  });
+  socket.on('forceJoin', async ({ targetAuthId, lobby, requesterAuthId }) => {
+    await forceJoin(lobby, targetAuthId, requesterAuthId);
     emitLobbyData(lobby);
   });
   socket.on('promoteMod', async ({ targetAuthId, lobby, requesterAuthId }) => {

@@ -1,15 +1,40 @@
 * {
   font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
 }
-.background {
+
+html,
+body,
+#__next {
+  min-height: 100%;
+  margin: 0;
+  background: #211E32;
+}
+
+body {
   background-image: url("/Background.svg");
+  background-attachment: fixed;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.background {
+  background-color: #211E32;
+  background-image: url("/Background.svg");
+  background-attachment: fixed;
+  background-position: center top;
+  background-repeat: no-repeat;
   background-size: cover;
   width: 100vw;
   min-height: 100vh;
 }
 
 .game-background {
+  background-color: #211E32;
   background-image: url("/Background.svg");
+  background-attachment: fixed;
+  background-position: center top;
+  background-repeat: no-repeat;
   background-size: cover;
   width: 100vw;
   min-height: 100vh;
@@ -117,8 +142,18 @@ text-align: center;
   z-index: 900;
 }
 
-.spectators-list ul {
-  columns: 2;
+.player-card-section h1 {
+  color: #D19E61;
+  font-size: 24px;
+  letter-spacing: 0.04em;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.player-card-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .rules {
@@ -166,8 +201,14 @@ text-align: center;
     grid-template-columns: 1fr;
   }
 
-  .spectators-list ul {
-    columns: 1;
+  .player-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .player-card-actions {
+    justify-content: flex-start;
+    margin-left: 0;
   }
 }
 
@@ -181,6 +222,21 @@ text-align: center;
 .theme-icon-button:focus {
   background: #3A4171 !important;
   color: #FFF !important;
+}
+
+.top-invite-button {
+  align-items: center;
+  display: inline-flex !important;
+  height: 42px;
+  justify-content: center;
+  min-width: 42px !important;
+  padding: 0 !important;
+  width: 42px;
+}
+
+.top-invite-button svg {
+  height: 18px;
+  width: 18px;
 }
 
 .room-error-page {
@@ -247,4 +303,76 @@ text-align: center;
   background: #211E32;
   color: #D19E61;
   border: 1px solid #D19E61;
+}
+
+.player-card {
+  align-items: center;
+  background: linear-gradient(135deg, rgba(58, 65, 113, 0.92), rgba(33, 30, 50, 0.94));
+  border: 1px solid rgba(209, 158, 97, 0.68);
+  border-left: 5px solid #D19E61;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-height: 58px;
+  padding: 10px 12px;
+  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+.player-card:hover,
+.player-card:focus-within {
+  border-color: #F5D74C;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
+  transform: translateY(-1px);
+}
+
+.player-card.offline-player {
+  background: linear-gradient(135deg, rgba(58, 65, 113, 0.55), rgba(33, 30, 50, 0.72));
+  border-color: rgba(201, 195, 212, 0.35);
+  border-left-color: #777287;
+  opacity: 0.72;
+}
+
+.self-player-card {
+  border-left-color: #FFF3A3;
+  box-shadow: 0 0 0 1px rgba(255, 243, 163, 0.32), 0 8px 20px rgba(0, 0, 0, 0.22);
+}
+
+.player-card-main {
+  min-width: 0;
+}
+
+.player-card-name {
+  color: #FFF;
+  font-size: 18px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.player-card-status {
+  color: #D8C7B2;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+.player-card-actions {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.offline-user {
+  color: #c9c3d4;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.moderation-icon-button svg {
+  height: 13px;
+  width: 13px;
 }

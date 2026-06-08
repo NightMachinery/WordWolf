@@ -11,7 +11,6 @@ import styled from 'styled-components';
 import { socket } from '../pages/api/service/socket';
 import { StoreContext } from '../pages/api/contextStore';
 
-
 function VillagerVote({ lobby, loginData }) {
   const [currVote, setCurrVote] = useState('---');
   const { voted, setVoted } = useContext(StoreContext);
@@ -44,8 +43,14 @@ function VillagerVote({ lobby, loginData }) {
                 <ChooseW id="PlayersDrop" name="players" onChange={(e) => { pickedDrop(e); }}>
                   <option value="DEFAULT" selected disabled>---</option>
                   {lobby && Object.keys(lobby?.players)
-                    .map((p) => ((loginData.authId !== p) && (lobby.players[p].spectator === false && lobby.players[p].observer === false))
-                      && <option value={p}>{lobby.players[p].displayName}</option>)}
+                    .filter((p) => {
+                      const player = lobby.players[p];
+                      return loginData.authId !== p
+                        && player.online
+                        && player.spectator === false
+                        && player.observer === false;
+                    })
+                    .map((p) => <option value={p}>{lobby.players[p].displayName}</option>)}
                 </ChooseW>
                 {voted ? null : <Box as="button" marginTop="10" backgroundColor="#C4C4C4" id="Submit" type="button" onClick={(e) => { clickedOnButton(e); }}>SUBMIT</Box>}
               </Box>

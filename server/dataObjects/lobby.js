@@ -16,7 +16,7 @@ const palette = [
 
 const seatColors = Object.fromEntries(seatIds.map((seat, index) => [seat, palette[index]]));
 
-const activePlayer = (player) => player && !player.spectator && !player.observer;
+const activePlayer = (player) => player && player.online && !player.spectator && !player.observer;
 const activePlayerCount = (lobby) => Object.values(lobby.players).filter(activePlayer).length;
 const firstFreeSeat = (lobby) => seatIds.find((seat) => !lobby.seats[seat]);
 const seatPlayer = (lobby, player, seat, color) => {
@@ -286,6 +286,21 @@ const toggleSpectate = (authId, lobby) => {
   }
   player.color = null;
   return currentLobby;
+};
+
+
+const forceJoin = (lobbyName, targetAuthId, requesterAuthId) => {
+  const lobby = requireMod(lobbyName, requesterAuthId);
+  if (!lobby || !lobby.players[targetAuthId] || targetAuthId === requesterAuthId) {
+    return null;
+  }
+  const player = lobby.players[targetAuthId];
+  const targetSeat = firstFreeSeat(lobby);
+  if (!targetSeat || (activePlayerCount(lobby) >= MAX_ACTIVE_PLAYERS && !activePlayer(player))) {
+    return null;
+  }
+  seatPlayer(lobby, player, targetSeat);
+  return lobby;
 };
 
 const setObserver = (lobbyName, targetAuthId, observer, requesterAuthId) => {
@@ -604,6 +619,7 @@ module.exports = {
   autoSeatPlayer,
   setObserver,
   rejoinFromObserver,
+  forceJoin,
   onMayorPick,
   onTimeout,
   afterVotingRound,

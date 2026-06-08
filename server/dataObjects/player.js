@@ -105,11 +105,9 @@ const removePlayerFromLobby = (playerRef) => {
     return null;
   }
   const player = currentLobby.players[playerRef.authId];
-  if (player) {
-    if (player.seat) {
-      currentLobby.seats[player.seat] = null;
-    }
-    delete currentLobby.players[playerRef.authId];
+  if (player && player.socketId === playerRef.socketId) {
+    player.online = false;
+    player.socketId = null;
   }
 
   players.delete(playerRef.socketId);
